@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vite/client"],
+    "types": ["astro/client"],
     "tsBuildInfoFile": "./node_modules/.tmp/app.tsbuildinfo"
   },
   "include": ["src", "shared"]

@@ -16,3 +16,10 @@ GEMINI_API_KEY=
 # (e.g. the existing Google Apps Script web app URLs). Kept off the client.
 # FEEDBACK_WEBHOOK_URL=
 # USAGE_WEBHOOK_URL=
+
+# Contact form delivery (pick one). Resend sends a real email; the webhook can be
+# a Google Apps Script that emails you from Google Workspace.
+# RESEND_API_KEY=
+# CONTACT_TO_EMAIL=hello@palmreadings.ai
+# CONTACT_FROM_EMAIL=Palm Readings AI <website@palmreadings.ai>
+# CONTACT_WEBHOOK_URL=

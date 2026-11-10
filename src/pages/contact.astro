@@ -1,0 +1,81 @@
+---
+import Page from '../layouts/Page.astro';
+import { CONTACT_EMAIL } from '../site';
+
+const field =
+  'w-full rounded-xl border border-white/10 bg-night-900/70 px-4 py-3 text-white placeholder:text-violet-300/40 focus:border-gold-400 focus:outline-none';
+---
+
+<Page
+  title="Contact | Palm Readings AI"
+  heading="Contact"
+  description="Questions, feedback, or concerns about Palm Readings AI? Send us a message."
+>
+  <p class="prose-page mb-10 text-center">
+    We greatly appreciate our users sharing any feedback, questions, or concerns about Palm Readings AI. We take these
+    messages to heart and aim to improve constantly.
+  </p>
+
+  <div class="grid gap-6 md:grid-cols-[3fr_2fr]">
+    <form id="contact-form" class="panel space-y-4 p-6 sm:p-8" novalidate>
+      <h2 class="font-display text-xl text-white">General Inquiries</h2>
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-bold text-violet-100">Name</span>
+        <input name="name" required maxlength="100" autocomplete="name" class={field} />
+      </label>
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-bold text-violet-100">Email</span>
+        <input name="email" type="email" required maxlength="200" autocomplete="email" class={field} />
+      </label>
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-bold text-violet-100">Subject</span>
+        <input name="subject" maxlength="150" class={field} />
+      </label>
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-bold text-violet-100">Message</span>
+        <textarea name="message" required maxlength="5000" rows="6" class={field}></textarea>
+      </label>
+      <!-- Honeypot for bots; hidden from people and screen readers. -->
+      <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      <button type="submit" class="w-full rounded-[10px] bg-gold-400 px-6 py-3 font-bold text-plum-900 transition hover:bg-gold-500 disabled:opacity-60">
+        Send message
+      </button>
+      <p id="contact-status" role="status" class="text-center text-sm"></p>
+    </form>
+
+    <aside class="panel h-fit p-6 sm:p-8">
+      <h2 class="font-display text-xl text-white">Other Contact & Feedback</h2>
+      <p class="mt-3 text-violet-200/90">Prefer email? Reach us directly at:</p>
+      <a href={`mailto:${CONTACT_EMAIL}`} class="mt-2 inline-block font-bold text-gold-400 underline">{CONTACT_EMAIL}</a>
+    </aside>
+  </div>
+</Page>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement;
+  const status = document.getElementById('contact-status')!;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    const button = form.querySelector('button')!;
+    button.disabled = true;
+    status.textContent = 'Sending…';
+    status.className = 'text-center text-sm text-violet-200';
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || 'Something went wrong.');
+      form.reset();
+      status.textContent = 'Thank you! Your message has been sent.';
+      status.className = 'text-center text-sm font-bold text-gold-400';
+    } catch (err) {
+      status.textContent = err instanceof Error ? err.message : 'Something went wrong.';
+      status.className = 'text-center text-sm font-bold text-red-300';
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>

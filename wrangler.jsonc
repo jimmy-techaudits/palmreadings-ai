@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "palmreadings",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Astro builds the static site into dist/. The Worker runs first for every
+  // request (API routes and redirects) and hands everything else to the assets.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": true
+  },
+  "observability": { "enabled": true },
+  // Non-secret settings. Secrets (API keys) go in .dev.vars locally and
+  // `wrangler secret put NAME` (or the dashboard) in production.
+  "vars": {
+    "AI_PROVIDER": "mock"
+  }
+  // After the DNS moves to Cloudflare, add:
+  // "routes": [
+  //   { "pattern": "palmreadings.ai", "custom_domain": true },
+  //   { "pattern": "www.palmreadings.ai", "custom_domain": true },
+  //   { "pattern": "app.palmreadings.ai", "custom_domain": true }
+  // ]
+}

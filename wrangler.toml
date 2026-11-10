@@ -1,9 +1,0 @@
-name = "palmreadings-app"
-pages_build_output_dir = "./dist"
-compatibility_date = "2026-10-01"
-compatibility_flags = ["nodejs_compat"]
-
-# Non-secret settings. Secrets (API keys) go in .dev.vars locally and in the
-# Cloudflare dashboard (or `wrangler pages secret put`) in production.
-[vars]
-AI_PROVIDER = "mock"

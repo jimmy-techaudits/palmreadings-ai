@@ -1,0 +1,110 @@
+---
+import '../styles/global.css';
+import { GA_ID, IMAGES } from '../site';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Hide the "Start a Reading" button (on the reading page itself). */
+  hideCta?: boolean;
+}
+const { title, description, hideCta = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const nav = [
+  { href: '/about/', label: 'About' },
+  { href: '/contact/', label: 'Contact' },
+];
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={IMAGES.appScreens} />
+    <meta name="theme-color" content="#040713" />
+    <link rel="icon" href={IMAGES.favicon} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Comfortaa:wght@400;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
+    <script is:inline define:vars={{ GA_ID }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', GA_ID);
+    </script>
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <header class="bg-brand-header border-b border-white/5 print:hidden">
+      <div class="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-4 sm:h-24 sm:px-6">
+        <a href="/" aria-label="Palm Readings AI home" class="shrink-0">
+          <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" class="h-14 w-auto sm:h-20" />
+        </a>
+        <nav class="flex items-center gap-1 sm:gap-4" aria-label="Main">
+          {nav.map((n) => (
+            <a href={n.href} class="hidden rounded-lg px-3 py-2 font-bold text-white/90 hover:text-gold-400 sm:inline-block">{n.label}</a>
+          ))}
+          {!hideCta && (
+            <a
+              href="/reading/?new=1"
+              class="rounded-[10px] border-[3px] border-gold-400 bg-gold-400 px-4 py-2 text-sm font-bold text-plum-900 transition hover:border-gold-500 hover:bg-gold-500 sm:text-base"
+            >
+              Start a Reading
+            </a>
+          )}
+          <details class="relative sm:hidden">
+            <summary class="cursor-pointer list-none rounded-lg px-3 py-2 font-bold text-white" aria-label="Menu">☰</summary>
+            <div class="absolute right-0 z-20 mt-2 flex w-40 flex-col rounded-xl border border-white/10 bg-night-900 p-2 shadow-xl">
+              {nav.map((n) => <a href={n.href} class="rounded-lg px-3 py-2 text-white hover:bg-white/5">{n.label}</a>)}
+            </div>
+          </details>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="print:hidden">
+      <div class="bg-brand-footer border-t border-royal-800">
+        <div class="mx-auto grid max-w-6xl items-center gap-10 px-[5%] py-10 text-center md:grid-cols-3 md:px-6">
+          <div class="flex flex-col items-center gap-5">
+            <a href="/"><img src={IMAGES.logo} alt="Palm Readings AI logo" width="700" height="300" loading="lazy" class="w-60 max-w-full" /></a>
+            <a href="/reading/?new=1" class="rounded-[10px] bg-gold-400 px-4 py-2 text-lg font-bold text-plum-900 transition hover:-translate-y-0.5 hover:bg-gold-500">
+              Get a New Reading
+            </a>
+          </div>
+          <div class="flex flex-col items-center gap-2 text-lg">
+            <p class="mb-1 font-bold text-white">Company</p>
+            <a href="/about/" class="text-lavender-300 underline hover:text-gold-400">About Us</a>
+            <a href="/contact/" class="text-lavender-300 underline hover:text-gold-400">Contact</a>
+          </div>
+          <p class="text-sm italic leading-relaxed text-lavender-300 md:text-left">
+            Readings provided by PalmReadings.ai are generated using artificial intelligence and are intended for informational
+            and reflective purposes only. Interpretations are not guaranteed to be accurate and should not be considered
+            professional, medical, legal, or financial advice. Individual experiences may vary.
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-col items-center justify-center gap-2 bg-night-950 px-[5%] py-5 text-sm text-white sm:flex-row sm:gap-6">
+        <span>© {year} Palm Readings AI - All Rights Reserved</span>
+        <a href="/privacy-policy/" class="text-lavender-300 underline hover:text-gold-400">Privacy Policy</a>
+        <a href="/terms/" class="text-lavender-300 underline hover:text-gold-400">Terms of Use</a>
+      </div>
+    </footer>
+  </body>
+</html>

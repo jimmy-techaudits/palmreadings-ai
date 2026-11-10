@@ -1,0 +1,21 @@
+---
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  heading: string;
+  description: string;
+  eyebrow?: string;
+}
+const { title, heading, description, eyebrow } = Astro.props;
+---
+
+<Base title={title} description={description}>
+  <section class="bg-brand-band py-14 text-center">
+    {eyebrow && <p class="mb-2 text-sm text-lavender-300">{eyebrow}</p>}
+    <h1 class="px-4 font-display text-4xl text-white sm:text-5xl">{heading}</h1>
+  </section>
+  <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <slot />
+  </div>
+</Base>

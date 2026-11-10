@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+
+/* Brand tokens carried over from the WordPress site (GeneratePress palette). */
+@theme {
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-sans: 'Comfortaa', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Long-form reading text: easier to read than Comfortaa at length. */
+  --font-read: 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-night-950: #040713;
+  --color-night-900: #0b0a1f;
+  --color-night-800: #171233;
+  --color-plum-900: #221547;
+  --color-plum-800: #231547;
+  --color-royal-800: #581c87;
+  --color-lavender-300: #d8b4fe;
+  --color-gold-300: #fed79b;
+  --color-gold-400: #fec878;
+  --color-gold-500: #fdbb5a;
+}
+
+html {
+  background: var(--color-night-950);
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgb(88 28 135 / 0.45), transparent 70%),
+    var(--color-night-950);
+  color: rgb(237 233 254);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header and footer gradients from the WordPress theme. */
+.bg-brand-header {
+  background-image: linear-gradient(190deg, var(--color-royal-800) 0%, var(--color-night-950) 100%);
+}
+.bg-brand-footer {
+  background-image: linear-gradient(359deg, var(--color-night-950) 0%, var(--color-royal-800) 100%);
+}
+.bg-brand-band {
+  background-image: linear-gradient(317deg, var(--color-royal-800) 0%, var(--color-night-950) 100%);
+}
+
+.panel {
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.09);
+  border-radius: 1.25rem;
+}
+
+/* Legal and long-form pages. */
+.prose-page h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: #fff;
+  margin: 2.25rem 0 0.75rem;
+}
+.prose-page p,
+.prose-page li {
+  font-family: var(--font-read);
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: rgb(221 214 254);
+}
+.prose-page p + p {
+  margin-top: 1rem;
+}
+.prose-page ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0 1rem;
+}
+.prose-page a {
+  color: var(--color-gold-400);
+  text-decoration: underline;
+}
+.prose-page strong {
+  color: #fff;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #1f1633 !important;
+  }
+  .panel {
+    background: #fff !important;
+    border-color: #ddd6fe !important;
+    break-inside: avoid;
+  }
+  .print-dark { color: #1f1633 !important; }
+  .print-muted { color: #4c4566 !important; }
+}

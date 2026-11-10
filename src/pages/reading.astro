@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+import App from '../app/App';
+---
+
+<Base
+  title="Start Your Palm Reading | Palm Readings AI"
+  description="Photograph your palms and get a personal reading on your personality, love life, career, or relationship."
+  hideCta
+>
+  <App client:only="react">
+    <div slot="fallback" class="flex min-h-[60vh] items-center justify-center text-violet-200">Loading…</div>
+  </App>
+</Base>

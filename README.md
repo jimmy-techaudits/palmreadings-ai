@@ -1,7 +1,17 @@
 # Palm Readings AI
 
-The app behind **app.palmreadings.ai**. React + Vite frontend with Cloudflare Pages Functions on the
-server. The main site (palmreadings.ai) stays on WordPress / EasyWP.
+The whole palmreadings.ai site (marketing pages and the reading app) on Cloudflare Workers.
+
+- **Astro** builds the pages in `src/pages/` to static HTML (home, about, contact, privacy, terms, 404).
+- **The reading app** is React (`src/app/`), mounted at `/reading/`.
+- **The Worker** (`worker/index.ts`) serves the site and handles `/api/reading`, `/api/feedback`,
+  `/api/contact`, plus redirects: `app.palmreadings.ai` → `/reading/`, `www` → bare domain, old
+  WordPress-only URLs → home. The WordPress URLs `/about/`, `/contact/`, `/privacy-policy/`, `/terms/`
+  are kept as-is.
+- **Server code** for readings lives in `server/`; types shared with the app are in `shared/`.
+
+Brand: colors and gradients from the WordPress theme (`src/styles/global.css`), Cinzel headings,
+Comfortaa UI text, Nunito Sans for long reading text.
 
 ## How a reading works
 
@@ -10,50 +20,59 @@ server. The main site (palmreadings.ai) stays on WordPress / EasyWP.
    marriage & children predictions.
 3. **Photos** – both palms are always required. The pinky-side photo of the dominant hand becomes
    required when marriage & children predictions are on (that's where those lines are). Photos are
-   resized to ≤1600px JPEG in the browser before upload and are never stored.
-4. **Server pipeline** (`functions/_lib/pipeline.ts`), streamed back to the browser as progress events:
-   - **Observe** – one vision call per person returns structured data on what is visible (hand shape,
-     each line, mounts, markings, relationship/children lines) and flags unusable photos.
+   resized to ≤1600px JPEG in the browser and never stored.
+4. **Server pipeline** (`server/pipeline.ts`), streamed to the browser as progress events:
+   - **Observe** – one vision call per person returns structured data on what is visible and flags
+     unusable photos.
    - **Interpret** – one text-only call writes the reading from those observations plus the
-     palmistry rulebook (`functions/_lib/rulebook.ts`), in a fixed structure (`functions/_lib/schemas.ts`).
-     Each section lists the features it is based on.
-5. **Results** – headline, traits, "What we saw in your hands", sections, family predictions (if
-   opted in), action steps, mantra, print-to-PDF, feedback.
+     palmistry rulebook (`server/rulebook.ts`) in a fixed structure (`server/schemas.ts`). Each
+     section lists the features it is based on.
+5. **Results** – headline, traits, "What we saw in your hands", sections, family predictions (if opted
+   in), action steps, mantra, print-to-PDF, feedback.
 
-Sections per reading type live in `shared/plan.ts`. Each has a `free`/`premium` tier for the paid
-version (not enforced yet).
+Sections per reading type: `shared/plan.ts` (each has a `free`/`premium` tier for the paid version).
 
 ## Model providers
 
-Set `AI_PROVIDER` to `anthropic`, `openai`, `gemini`, or `mock` (canned output, no key, for UI work).
-`OBSERVE_MODEL` / `INTERPRET_MODEL` choose the model for each step; Anthropic defaults to
-`claude-opus-5-5`, OpenAI and Gemini require them to be set.
+`AI_PROVIDER` = `anthropic`, `openai`, `gemini`, or `mock` (canned output, no key, for UI work).
+`OBSERVE_MODEL` / `INTERPRET_MODEL` pick the model per step; Anthropic defaults to `claude-opus-5-5`,
+OpenAI and Gemini require them.
 
 ## Local development
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars   # add keys, pick AI_PROVIDER
-npm run dev:full                 # builds and serves app + API on http://localhost:8788
+cp .dev.vars.example .dev.vars   # keys, AI_PROVIDER, contact delivery
+npm run dev:full                 # builds and runs site + API on http://localhost:8787
 ```
 
-For fast UI iteration: run `npm run preview` (API on :8788) in one terminal and `npm run dev`
-(hot reload on :3000, proxies /api) in another.
+For hot reload: `npm run preview` (Worker on :8787) in one terminal, `npm run dev` (Astro on :4321,
+proxies /api) in another.
 
-## Deploying to Cloudflare Pages
+## Moving palmreadings.ai from EasyWP to Cloudflare
 
-1. `npx wrangler login`, then `npm run deploy` (creates the `palmreadings-app` Pages project on first run).
-2. In the Cloudflare dashboard → the Pages project → Settings → Variables and Secrets, set
-   `AI_PROVIDER`, the matching API key as a **secret**, and optionally `OBSERVE_MODEL`,
-   `INTERPRET_MODEL`, `FEEDBACK_WEBHOOK_URL`, `USAGE_WEBHOOK_URL` (the existing Google Apps
-   Script URLs can go here; they are now called from the server only).
-3. Pages project → Custom domains → add `app.palmreadings.ai`. Cloudflare shows a CNAME target
-   (`palmreadings-app.pages.dev`).
-4. In Namecheap → Domain List → palmreadings.ai → Advanced DNS, change the `app` record to a
-   CNAME pointing at that target. WordPress and the rest of the domain are unaffected.
+Do these in order. Nothing changes for visitors until step 5.
 
-## Not yet done (later phases)
+1. **Back up WordPress**: Tools → Export (done), plus a full EasyWP backup.
+2. **Copy the images** listed in `src/site.ts` into `public/images/` and set `IMAGE_BASE` to
+   `'/images'`. They currently load from the WordPress media library, which disappears with EasyWP.
+3. **Add the domain to Cloudflare** (free plan). Cloudflare scans existing DNS; then check every
+   record against Namecheap's Advanced DNS, especially the **Google Workspace email records**:
+   the MX records, the SPF TXT (`v=spf1 include:_spf.google.com ~all`), DKIM (`google._domainkey`), DMARC
+   (`_dmarc`), and any Google site-verification TXT. Missing any of these breaks email.
+4. **Deploy**: `npx wrangler login`, then `npm run deploy`. Set secrets with
+   `npx wrangler secret put ANTHROPIC_API_KEY` (etc.) and change `AI_PROVIDER` in `wrangler.jsonc`.
+   Test on the `*.workers.dev` URL.
+5. **Switch nameservers** at Namecheap to the two Cloudflare gives you. After it's active, uncomment
+   the `routes` block in `wrangler.jsonc` and deploy again. That attaches `palmreadings.ai`,
+   `www` and `app` to the Worker and replaces the old EasyWP / app records.
+6. **Check**: every page, the reading flow, the contact form, an email to and from hello@palmreadings.ai.
+7. **Cancel EasyWP** once everything has worked for a few days.
 
-- Bot protection (Turnstile) and rate limiting – needed before real API keys go live publicly.
+## Before launch
+
+- **Bot protection (Turnstile) and rate limiting** on `/api/reading` and `/api/contact`.
+- **Legal review**: the Privacy Policy and Terms were copied from WordPress unchanged. They don't
+  mention sending photos to an AI provider, and the Terms grant a perpetual right to store palm images,
+  which contradicts the app's "photos are not stored" consent text.
 - Payments (Stripe), saved/shareable readings, email capture.
-- Blind provider comparison on real hand photos.
