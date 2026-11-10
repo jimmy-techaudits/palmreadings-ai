@@ -1,5 +1,9 @@
 export interface Env {
   ASSETS: Fetcher;
+  DB: D1Database;
+  PHOTOS: R2Bucket;
+  /** Bearer token for the admin delete endpoint (deletion requests by email). */
+  ADMIN_TOKEN?: string;
   /** Contact form delivery: Resend API key, or a webhook (e.g. a Google Apps Script that emails you). */
   RESEND_API_KEY?: string;
   CONTACT_WEBHOOK_URL?: string;

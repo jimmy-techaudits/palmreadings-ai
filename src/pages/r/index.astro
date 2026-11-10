@@ -1,0 +1,11 @@
+---
+// Served for every private reading link /r/<id>/ (see worker/index.ts).
+import Base from '../../layouts/Base.astro';
+import SavedReadingView from '../../app/SavedReadingView';
+---
+
+<Base title="Your Palm Reading | Palm Readings AI" description="Your private palm reading." noindex>
+  <SavedReadingView client:only="react">
+    <div slot="fallback" class="flex min-h-[60vh] items-center justify-center text-violet-200">Loading your reading…</div>
+  </SavedReadingView>
+</Base>

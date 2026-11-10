@@ -14,6 +14,14 @@
     "run_worker_first": true
   },
   "observability": { "enabled": true },
+  // Saved readings (D1) and their photos (R2). Create them once with:
+  //   npx wrangler d1 create palmreadings   (then paste the database_id below)
+  //   npx wrangler r2 bucket create palmreadings-photos
+  //   npx wrangler d1 migrations apply palmreadings --remote
+  "d1_databases": [
+    { "binding": "DB", "database_name": "palmreadings", "database_id": "REPLACE_WITH_DATABASE_ID", "migrations_dir": "migrations" }
+  ],
+  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "palmreadings-photos" }],
   // Non-secret settings. Secrets (API keys) go in .dev.vars locally and
   // `wrangler secret put NAME` (or the dashboard) in production.
   "vars": {

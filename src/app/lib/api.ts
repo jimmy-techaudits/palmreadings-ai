@@ -1,4 +1,4 @@
-import type { ReadingRequest, StreamEvent } from '../../../shared/types';
+import type { ReadingRequest, SavedReadingData, StreamEvent } from '../../../shared/types';
 
 export class ApiError extends Error {}
 
@@ -35,7 +35,7 @@ export async function requestReading(req: ReadingRequest, onEvent: (e: StreamEve
   if (!finished) throw new ApiError('The connection was interrupted. Please try again.');
 }
 
-export function sendFeedback(body: { rating: 1 | -1; comment: string; mode: string; focus: string }) {
+export function sendFeedback(body: { rating: 1 | -1; comment: string; mode: string; focus: string; readingId?: string }) {
   return fetch('/api/feedback', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -48,3 +48,17 @@ export function track(event: string, params: Record<string, string | boolean>) {
   const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
   gtag?.('event', event, params);
 }
+
+export async function fetchSavedReading(id: string): Promise<SavedReadingData | null> {
+  const res = await fetch(`/api/readings/${encodeURIComponent(id)}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new ApiError('We could not load this reading. Please try again.');
+  return res.json();
+}
+
+export async function deleteSavedReading(id: string): Promise<void> {
+  const res = await fetch(`/api/readings/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  if (!res.ok && res.status !== 404) throw new ApiError('We could not delete this reading. Please try again.');
+}
+
+export const photoUrl = (id: string, slot: string) => `/api/readings/${encodeURIComponent(id)}/photos/${slot}`;

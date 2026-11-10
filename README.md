@@ -27,8 +27,37 @@ Comfortaa UI text, Nunito Sans for long reading text.
    - **Interpret** – one text-only call writes the reading from those observations plus the
      palmistry rulebook (`server/rulebook.ts`) in a fixed structure (`server/schemas.ts`). Each
      section lists the features it is based on.
-5. **Results** – headline, traits, "What we saw in your hands", sections, family predictions (if opted
+5. **Saved at a private link** – the reading (D1) and its photos (R2) are stored with no expiry and
+   the browser moves to `/r/<id>/` (a 128-bit random id, not indexed by search engines). Anyone with
+   the link can view or delete it. No user accounts.
+6. **Results** – headline, traits, "What we saw in your hands", sections, family predictions (if opted
    in), action steps, mantra, print-to-PDF, feedback.
+
+## Saved readings, deletion requests and stats
+
+Storage code: `server/store.ts`, schema: `migrations/`. Each row has anonymous columns (mode, focus,
+age band, dominant hand, element, marriage/children ranges, feedback rating) for statistics, plus the
+full reading JSON (which includes any first name given).
+
+**Deleting a reading for someone who emails in.** If they send their link, the id is the part after
+`/r/`. Otherwise find it, then delete it (this also deletes its photos):
+
+```bash
+npx wrangler d1 execute palmreadings --remote --command \
+  "SELECT id, created_at, focus FROM readings WHERE data LIKE '%\"name\":\"Jordan\"%' ORDER BY created_at DESC"
+curl -X DELETE https://palmreadings.ai/api/admin/readings/<id> -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+Set the token once with `npx wrangler secret put ADMIN_TOKEN` (any long random string).
+
+**Marketing stats** (anonymous columns only, never `data`):
+
+```bash
+npx wrangler d1 execute palmreadings --remote --command \
+  "SELECT marriages, COUNT(*) n FROM readings WHERE include_family = 1 GROUP BY marriages ORDER BY n DESC"
+npx wrangler d1 execute palmreadings --remote --command \
+  "SELECT age_band, element, COUNT(*) n FROM readings GROUP BY 1, 2 ORDER BY n DESC"
+```
 
 Sections per reading type: `shared/plan.ts` (each has a `free`/`premium` tier for the paid version).
 
@@ -43,6 +72,7 @@ OpenAI and Gemini require them.
 ```bash
 npm install
 cp .dev.vars.example .dev.vars   # keys, AI_PROVIDER, contact delivery
+npx wrangler d1 migrations apply palmreadings --local   # once: local database
 npm run dev:full                 # builds and runs site + API on http://localhost:8787
 ```
 
@@ -60,7 +90,9 @@ Do these in order. Nothing changes for visitors until step 5.
    record against Namecheap's Advanced DNS, especially the **Google Workspace email records**:
    the MX records, the SPF TXT (`v=spf1 include:_spf.google.com ~all`), DKIM (`google._domainkey`), DMARC
    (`_dmarc`), and any Google site-verification TXT. Missing any of these breaks email.
-4. **Deploy**: `npx wrangler login`, then `npm run deploy`. Set secrets with
+4. **Deploy**: `npx wrangler login`. Create storage once: `npx wrangler d1 create palmreadings` (paste
+   the `database_id` into `wrangler.jsonc`), `npx wrangler r2 bucket create palmreadings-photos`, and
+   `npx wrangler d1 migrations apply palmreadings --remote`. Then `npm run deploy`. Set secrets with
    `npx wrangler secret put ANTHROPIC_API_KEY` (etc.) and change `AI_PROVIDER` in `wrangler.jsonc`.
    Test on the `*.workers.dev` URL.
 5. **Switch nameservers** at Namecheap to the two Cloudflare gives you. After it's active, uncomment
@@ -73,6 +105,9 @@ Do these in order. Nothing changes for visitors until step 5.
 
 - **Bot protection (Turnstile) and rate limiting** on `/api/reading` and `/api/contact`.
 - **Legal review**: the Privacy Policy and Terms were rewritten (Nov 2026) to match how the site handles data
-  (photos sent to an AI provider and not stored, 18+, consent for a partner's photos, paid readings).
-  Have a legal advisor review them before launch.
-- Payments (Stripe), saved/shareable readings, email capture.
+  (readings and photos stored until deleted at the private link or by email, anonymized stats in
+  marketing, 18+, consent for a partner's photos, paid readings). Have a legal advisor review them
+  before launch, in particular storing palm photos with no retention limit: Illinois (BIPA), Texas and
+  Washington have biometric laws that may require a retention schedule (BIPA: deletion within 3 years
+  of the person's last interaction).
+- Payments (Stripe), email capture (e.g. email me my private link).

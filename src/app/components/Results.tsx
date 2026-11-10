@@ -1,8 +1,8 @@
 import { Fragment, useState, type ReactNode } from 'react';
 import {
   Baby, Briefcase, Brain, ChevronDown, Compass, Eye, Flame, Gem, Heart, HeartHandshake, Loader2,
-  MessageCircle, Milestone, Printer, RotateCcw, Send, Sparkles, Sprout, Target, ThumbsDown, ThumbsUp, TrendingUp,
-  Users, type LucideIcon,
+  Check, Copy, Link2, MessageCircle, Milestone, Printer, RotateCcw, Send, Sparkles, Sprout, Target, ThumbsDown, ThumbsUp,
+  Trash2, TrendingUp, Users, type LucideIcon,
 } from 'lucide-react';
 import type { FamilyPrediction, PersonObservation, Reading } from '../../../shared/types';
 import { FOCUS_LABELS } from '../../../shared/plan';
@@ -18,7 +18,22 @@ const ICONS: Record<string, LucideIcon> = {
   person_a: Users, person_b: Users, dynamic: HeartHandshake, communication: MessageCircle, long_term: Compass,
 };
 
-export function Results({ saved, onReset }: { saved: SavedReading; onReset: () => void }) {
+export interface ResultPhoto {
+  slot: string;
+  url: string;
+  label: string;
+}
+
+interface ResultsProps {
+  saved: SavedReading;
+  onReset: () => void;
+  /** Set when the reading is saved at a private link. */
+  readingId?: string;
+  photos?: ResultPhoto[];
+  onDelete?: () => Promise<void>;
+}
+
+export function Results({ saved, onReset, readingId, photos, onDelete }: ResultsProps) {
   const { reading, observations, mode, focus, names } = saved;
   const title = mode === 'couple' ? `${names[0] || 'Partner A'} & ${names[1] || 'Partner B'}` : names[0] ? `${names[0]}’s Reading` : 'Your Reading';
 
@@ -32,6 +47,8 @@ export function Results({ saved, onReset }: { saved: SavedReading; onReset: () =
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-violet-100 print-dark">{reading.summary}</p>
       </header>
 
+      {readingId && <PrivateLink />}
+
       <ul className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {reading.traits.map((t) => (
           <li key={t.label} className="panel px-4 py-3 text-center">
@@ -40,6 +57,8 @@ export function Results({ saved, onReset }: { saved: SavedReading; onReset: () =
           </li>
         ))}
       </ul>
+
+      {photos && photos.length > 0 && <PhotoStrip photos={photos} />}
 
       <ObservedPanel observations={observations} names={names} mode={mode} />
 
@@ -94,7 +113,9 @@ export function Results({ saved, onReset }: { saved: SavedReading; onReset: () =
         <Button variant="secondary" onClick={onReset}><RotateCcw size={18} /> Start a new reading</Button>
       </div>
 
-      <FeedbackBox mode={mode} focus={focus} />
+      <FeedbackBox mode={mode} focus={focus} readingId={readingId} />
+
+      {onDelete && <DeleteBox onDelete={onDelete} />}
     </article>
   );
 }
@@ -194,7 +215,7 @@ function Prediction({ icon: Icon, label, p }: { icon: LucideIcon; label: string;
   );
 }
 
-function FeedbackBox({ mode, focus }: { mode: string; focus: string }) {
+function FeedbackBox({ mode, focus, readingId }: { mode: string; focus: string; readingId?: string }) {
   const [rating, setRating] = useState<1 | -1 | null>(null);
   const [comment, setComment] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
@@ -202,7 +223,7 @@ function FeedbackBox({ mode, focus }: { mode: string; focus: string }) {
   async function submit() {
     if (!rating) return;
     setState('sending');
-    await sendFeedback({ rating, comment, mode, focus }).catch(() => {});
+    await sendFeedback({ rating, comment, mode, focus, readingId }).catch(() => {});
     setState('sent');
   }
 
@@ -241,6 +262,85 @@ function FeedbackBox({ mode, focus }: { mode: string; focus: string }) {
           <Button onClick={submit} disabled={state === 'sending'} className="w-full">
             {state === 'sending' ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} Send feedback
           </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PrivateLink() {
+  const [copied, setCopied] = useState(false);
+  const url = window.location.href.split('?')[0];
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Copy your private link:', url);
+    }
+  }
+  return (
+    <section className="panel mb-8 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between print:hidden">
+      <div className="flex items-start gap-3">
+        <Link2 size={20} className="mt-0.5 shrink-0 text-gold-400" />
+        <div>
+          <p className="font-bold text-white">This is your private link</p>
+          <p className="text-sm text-violet-200/80">Bookmark it to come back anytime. Anyone with the link can see this reading and its photos.</p>
+        </div>
+      </div>
+      <Button variant="secondary" onClick={copy} className="shrink-0">
+        {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? 'Copied' : 'Copy link'}
+      </Button>
+    </section>
+  );
+}
+
+function PhotoStrip({ photos }: { photos: ResultPhoto[] }) {
+  return (
+    <section className="mb-5">
+      <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">Photos used for this reading</p>
+      <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+        {photos.map((p) => (
+          <li key={p.slot}>
+            <a href={p.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 hover:border-gold-400/60">
+              <img src={p.url} alt={p.label} loading="lazy" className="aspect-[4/5] w-full object-cover" />
+            </a>
+            <span className="mt-1 block text-center text-xs text-violet-300/80 print-muted">{p.label}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function DeleteBox({ onDelete }: { onDelete: () => Promise<void> }) {
+  const [state, setState] = useState<'idle' | 'confirm' | 'deleting' | 'error'>('idle');
+  async function run() {
+    setState('deleting');
+    try {
+      await onDelete();
+    } catch {
+      setState('error');
+    }
+  }
+  return (
+    <div className="mx-auto mt-8 max-w-lg text-center print:hidden">
+      {state === 'idle' ? (
+        <button onClick={() => setState('confirm')} className="inline-flex items-center gap-2 text-sm text-violet-300/70 underline hover:text-red-300">
+          <Trash2 size={15} /> Delete this reading and its photos
+        </button>
+      ) : (
+        <div className="panel border-red-400/30 p-5">
+          <p className="font-bold text-white">Delete this reading permanently?</p>
+          <p className="mt-1 text-sm text-violet-200/80">Your reading and photos will be erased and this link will stop working. This can’t be undone.</p>
+          {state === 'error' && <p className="mt-2 text-sm text-red-300">Something went wrong. Please try again.</p>}
+          <div className="mt-4 flex justify-center gap-3">
+            <Button variant="secondary" onClick={() => setState('idle')} disabled={state === 'deleting'}>Keep it</Button>
+            <Button onClick={run} disabled={state === 'deleting'} className="!bg-red-500 !text-white hover:!bg-red-400">
+              {state === 'deleting' ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />} Delete
+            </Button>
+          </div>
         </div>
       )}
     </div>

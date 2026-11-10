@@ -9,7 +9,12 @@ import { observationSchema, readingSchema } from './schemas';
  * checks photo quality. Step 2 (Interpret): one text-only call writes the
  * reading from those observations plus the rulebook.
  */
-export async function runReading(req: ReadingRequest, provider: Provider, emit: (e: StreamEvent) => void) {
+export async function runReading(
+  req: ReadingRequest,
+  provider: Provider,
+  emit: (e: StreamEvent) => void,
+  save: (reading: Reading, observations: PersonObservation[]) => Promise<string>,
+) {
   emit({ type: 'stage', stage: 'observing' });
 
   const observations = await Promise.all(
@@ -58,5 +63,12 @@ export async function runReading(req: ReadingRequest, provider: Provider, emit: 
     const s = byId.get(p.id);
     return s ? [{ ...s, title: p.title }] : [];
   });
-  emit({ type: 'reading', reading });
+
+  let id: string | null = null;
+  try {
+    id = await save(reading, observations);
+  } catch (e) {
+    console.error('Saving reading failed:', e);
+  }
+  emit({ type: 'reading', reading, id });
 }

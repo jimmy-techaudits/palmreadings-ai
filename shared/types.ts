@@ -115,5 +115,24 @@ export type StreamEvent =
   | { type: 'stage'; stage: Stage }
   | { type: 'photo_issues'; issues: { slot: string; reason: string }[] }
   | { type: 'observations'; observations: PersonObservation[] }
-  | { type: 'reading'; reading: Reading }
+  /** id is the saved reading's private-link id, or null if saving failed. */
+  | { type: 'reading'; reading: Reading; id: string | null }
   | { type: 'error'; message: string };
+
+// ---------- Saved readings (private links) ----------
+
+/** What GET /api/readings/:id returns. Photos are served from /api/readings/:id/photos/:slot. */
+export interface SavedReadingData {
+  id: string;
+  createdAt: string;
+  mode: Mode;
+  focus: Focus;
+  includeFamily: boolean;
+  people: Person[];
+  reading: Reading;
+  observations: PersonObservation[];
+  photoSlots: SlotId[];
+}
+
+/** Private-link ids: 22 base64url characters (128 random bits). */
+export const READING_ID_RE = /^[A-Za-z0-9_-]{22}$/;

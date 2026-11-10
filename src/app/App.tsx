@@ -117,6 +117,12 @@ export default function App() {
             setError(e.message);
             setStep('error');
           } else if (e.type === 'reading') {
+            if (e.id) {
+              // Saved: go to the reading's private link.
+              clearReading();
+              window.location.assign(`/r/${e.id}/`);
+              return;
+            }
             const result: SavedReading = {
               mode,
               focus,

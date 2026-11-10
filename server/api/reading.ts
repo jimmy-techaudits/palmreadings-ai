@@ -3,6 +3,7 @@ import type { Env } from '../env';
 import { runReading } from '../pipeline';
 import { getProvider } from '../providers';
 import { validateRequest } from '../validate';
+import { saveReading } from '../store';
 
 const MAX_BODY_BYTES = 12_000_000;
 
@@ -56,7 +57,9 @@ export async function handleReading(request: Request, env: Env, ctx: ExecutionCo
   waitUntil(
     (async () => {
       try {
-        await runReading(body, provider, emit);
+        await runReading(body, provider, emit, (reading, observations) =>
+          saveReading(env, body, reading, observations, provider.name),
+        );
       } catch (e) {
         console.error('Reading failed:', e);
         emit({ type: 'error', message: 'We could not finish your reading. Please try again in a moment.' });
