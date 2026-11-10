@@ -73,8 +73,11 @@ export function StepPhotos({ mode, people, slots, photos, issues, consent, onPho
         <input type="checkbox" className="mt-1 size-5 accent-gold-400" checked={consent} onChange={(e) => onConsent(e.target.checked)} />
         <span className="text-sm leading-relaxed text-violet-100">
           <span className="flex items-center gap-2 font-bold text-white"><ShieldCheck size={18} className="text-gold-400" /> Your photos stay private</span>
-          I agree that my photos will be sent to our AI provider to create this reading. Photos are not stored by Palm Readings AI and
-          are discarded once the reading is created.
+          Your photos are sent to our AI provider only to create this reading. We don’t store them, and they’re discarded once your
+          reading is ready. By continuing, you confirm you’re 18 or older{mode === 'couple' ? ', your partner has agreed to share their photos,' : ''} and
+          you agree to our{' '}
+          <a href="/terms/" target="_blank" className="text-gold-400 underline">Terms</a> and{' '}
+          <a href="/privacy-policy/" target="_blank" className="text-gold-400 underline">Privacy Policy</a>.
         </span>
       </label>
 

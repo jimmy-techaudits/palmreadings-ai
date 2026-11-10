@@ -1,53 +1,153 @@
 ---
 import Page from '../layouts/Page.astro';
+import { CONTACT_EMAIL } from '../site';
 ---
 
-<!-- Copied from the WordPress page. Review with your legal advisor before launch (see README). -->
-<Page title="Terms of Use | Palm Readings AI" heading="Terms of Use" description="The terms and conditions for using Palm Readings AI." eyebrow="Effective as of January 1, 2026">
+<!-- Draft revised November 2026 to match how the site works. Have it reviewed by a legal advisor before relying on it. -->
+<Page
+  title="Terms of Use | Palm Readings AI"
+  heading="Terms of Use"
+  description="The terms and conditions for using Palm Readings AI."
+  eyebrow="Last Updated and Effective as of November 10, 2026"
+>
   <div class="prose-page">
-<h2>Agreement Between User and Palm Readings AI</h2>
-<p>Welcome to Palm Readings AI ("Palm Readings," "we," "us," or "our"). This website and related digital services are provided to you conditioned on your acceptance, without modification, of the terms, conditions, and notices contained in these Terms of Use (the "Terms"). By accessing or using this site, you agree to be bound by these Terms.</p>
-<p>Any reference to the "site," "website," "services," "we," or "us" includes all Palm Readings AI web properties, tools, features, and communications. Please read these Terms carefully and retain a copy for your records.</p>
-<p>We reserve the right to update or modify these Terms at any time by posting changes on this page. It is your responsibility to review these Terms periodically. Continued use of the site following the posting of any changes constitutes acceptance of those changes.</p>
-<h2>Palm Readings AI Services</h2>
-<p>Palm Readings AI provides digital palm reading experiences, insights, and related informational tools intended for reflection, self-exploration, and personal perspective. Our services are not a substitute for professional advice of any kind.</p>
-<p>All services are provided on an informational and experiential basis only.</p>
-<h2>Privacy</h2>
-<p>Your use of the site is subject to the <a href="/privacy-policy/">Palm Readings AI Privacy Policy</a>, which is incorporated into these Terms by reference. Please review the Privacy Policy to understand how we collect, use, and protect your information.</p>
-<h2>General Conditions</h2>
-<p>We reserve the right to refuse service, suspend access, or terminate use of the site at our sole discretion, at any time and for any reason.</p>
-<h2>Use of the Site</h2>
-<p><strong>Age Requirement</strong> You must be at least the age of majority in your jurisdiction to use this site.</p>
-<p><strong>User Information</strong> You agree to provide accurate, current, and complete information when submitting forms or interacting with the site and to maintain the accuracy of such information.</p>
-<p><strong>Prohibited Uses</strong> You may not use the site for any unlawful purpose or in violation of any applicable laws or regulations. You may not attempt to interfere with the security, integrity, or performance of the site.</p>
-<h2>Intellectual Property</h2>
-<p><strong>Ownership</strong> All content, design, text, graphics, logos, images, software, and branding on this site are owned by or licensed to Palm Readings AI and are protected by applicable copyright, trademark, and intellectual property laws.</p>
-<p><strong>Restrictions on Use</strong> You may not reproduce, duplicate, copy, sell, resell, distribute, or exploit any portion of the site or its content without prior written permission from Palm Readings AI.</p>
-<p><strong>Use of Deliverables</strong> Any readings, interpretations, reports, or outputs provided by Palm Readings AI are for personal, non-commercial use only unless otherwise explicitly stated in writing. You may not redistribute, publish, or commercialize any content generated through the service.</p>
-<p>We reserve the right to modify or remove site content at any time without obligation or notice.</p>
-<h2>User Information and Content Contributions</h2>
-<p><strong>Submissions</strong> Users who submit content, including but not limited to palm images, feedback, comments, reviews, or form responses, grant Palm Readings AI a non-exclusive, royalty-free, perpetual right to use, store, reproduce, modify, and analyze such content for the purpose of operating and improving our services.</p>
-<p><strong>Accuracy and Rights</strong> You represent that you own or have the necessary rights to any content you submit and that such content does not infringe on the rights of any third party.</p>
-<p>Content submitted may be reviewed, modified, or removed at our discretion. Submission does not guarantee publication or continued availability.</p>
-<h2>Disclaimer of Warranties</h2>
-<p>The site and all services are provided on an "as is" and "as available" basis. Palm Readings AI makes no representations or warranties of any kind, express or implied, regarding the accuracy, reliability, completeness, or usefulness of any content, readings, or information provided.</p>
-<p>Palm Readings AI does not guarantee outcomes, interpretations, insights, or results derived from use of the site or services. Individual experiences and interpretations may vary.</p>
-<h2>Limitation of Liability</h2>
-<p>To the fullest extent permitted by law, Palm Readings AI shall not be liable for any direct, indirect, incidental, consequential, or punitive damages arising out of or related to your use of, or inability to use, the site or services.</p>
-<p>You acknowledge that any reliance on information provided through the site is solely at your own risk.</p>
-<h2>Indemnification</h2>
-<p>You agree to indemnify, defend, and hold harmless Palm Readings AI, its owners, operators, employees, contractors, and affiliates from and against any claims, damages, losses, liabilities, costs, and expenses, including reasonable attorneys’ fees, arising from your violation of these Terms or misuse of the site.</p>
-<h2>Dispute Resolution</h2>
-<p><strong>Governing Law</strong> These Terms shall be governed by and construed in accordance with the laws of the State of Michigan, without regard to conflict of law principles.</p>
-<p><strong>Jurisdiction</strong> Any legal action or proceeding arising out of or related to these Terms or your use of the site shall be brought exclusively in the state or federal courts located in Michigan, and you consent to the personal jurisdiction and venue of such courts.</p>
-<h2>Electronic Communications</h2>
-<p>By visiting the site or communicating with Palm Readings AI electronically, you consent to receive communications electronically and agree that all notices, disclosures, and communications provided electronically satisfy any legal requirement that such communications be in writing.</p>
-<h2>Termination of Use</h2>
-<p>Any violation of these Terms may result in immediate termination or suspension of your access to the site and services, without notice.</p>
-<h2>Confidentiality</h2>
-<p>Any non-public information exchanged through your use of the site or services is considered confidential and will be handled in accordance with our Privacy Policy. Users agree not to disclose proprietary or confidential information obtained through the site without prior written consent.</p>
-<h2>Contact Information</h2>
-<p>If you have questions or concerns regarding these Terms of Use, please contact us via the website contact form or by email at <a href="mailto:hello@palmreadings.ai">hello@palmreadings.ai</a>.</p>
-<p>By using Palm Readings AI, you acknowledge that you have read, understood, and agree to these Terms of Use.</p>
+    <h2>Agreement Between User and Palm Readings AI</h2>
+    <p>
+      Welcome to Palm Readings AI ("Palm Readings," "we," "us," or "our"). This website and related digital services are
+      provided to you on the condition that you accept these Terms of Use (the "Terms"). By accessing or using the site, you
+      agree to be bound by these Terms. If you do not agree, please do not use the site.
+    </p>
+    <p>
+      Any reference to the "site," "website," or "services" includes all Palm Readings AI web properties, tools, features,
+      and communications. We may update these Terms at any time by posting changes on this page with a new date. Continued
+      use of the site after changes are posted means you accept them.
+    </p>
+
+    <h2>Palm Readings AI Services</h2>
+    <p>
+      Palm Readings AI provides digital palm readings created with artificial intelligence and traditional palmistry. Our
+      readings are intended for <strong>entertainment, reflection, and self-exploration only</strong>.
+    </p>
+    <ul>
+      <li>Readings are generated automatically by AI and may be inaccurate, incomplete, or inconsistent.</li>
+      <li>Palmistry is a traditional practice, not a science. Readings describe tendencies and possibilities, not facts or certain outcomes.</li>
+      <li>Optional marriage and children predictions are traditional interpretations offered for entertainment. They are not predictions of fertility, health, or the future of any relationship.</li>
+      <li>Readings are not professional advice of any kind, including medical, psychological, legal, financial, or career advice. Do not rely on a reading to make important decisions.</li>
+    </ul>
+
+    <h2>Privacy</h2>
+    <p>
+      Your use of the site is subject to the <a href="/privacy-policy/">Palm Readings AI Privacy Policy</a>, which is part of
+      these Terms. It explains how we handle your information, including the hand photos you upload.
+    </p>
+
+    <h2>Eligibility</h2>
+    <p>You must be at least 18 years old (or the age of majority where you live) to use the reading service.</p>
+
+    <h2>Photos You Upload</h2>
+    <ul>
+      <li>You may only upload photos of your own hands, or of another person’s hands with that person’s permission.</li>
+      <li>You must not upload photos that show anything other than hands, or that contain other people’s identifying information.</li>
+      <li>
+        You keep ownership of your photos. You give us permission to process them, and to send them to our AI service
+        providers, solely to create the reading you request. We do not store your photos, and they are discarded once
+        your reading is created, as described in our Privacy Policy.
+      </li>
+    </ul>
+
+    <h2>Use of the Site</h2>
+    <p>
+      <strong>Accurate information.</strong> You agree to provide accurate information when using the site and submitting
+      forms.
+    </p>
+    <p>
+      <strong>Prohibited uses.</strong> You may not use the site for any unlawful purpose; attempt to interfere with its
+      security, integrity, or performance; use automated tools to submit requests or scrape content; attempt to extract our
+      prompts, rules, or other non-public parts of the service; or use the service to harass, profile, or identify other
+      people.
+    </p>
+
+    <h2>Paid Readings</h2>
+    <p>
+      Some readings or features may require payment. Prices are shown before you buy, and payments are processed by our
+      payment provider. Because readings are digital and delivered immediately, purchases are generally non-refundable. If
+      a reading fails to generate or you are charged in error, contact us and we will make it right.
+    </p>
+
+    <h2>Intellectual Property</h2>
+    <p>
+      <strong>Ownership.</strong> All content, design, text, graphics, logos, images, software, and branding on this site
+      are owned by or licensed to Palm Readings AI and are protected by applicable copyright, trademark, and intellectual
+      property laws.
+    </p>
+    <p>
+      <strong>Restrictions on use.</strong> You may not reproduce, duplicate, copy, sell, resell, distribute, or exploit any
+      portion of the site or its content without our prior written permission.
+    </p>
+    <p>
+      <strong>Your readings.</strong> Readings created for you are for your personal, non-commercial use. You are welcome
+      to save, print, and share your own reading with friends and family. You may not resell or republish readings
+      commercially.
+    </p>
+
+    <h2>Feedback and Messages</h2>
+    <p>
+      If you send us feedback, comments, or suggestions, you give us a non-exclusive, royalty-free, perpetual right to use
+      them to operate and improve our services, without obligation to you. This does not apply to your hand photos, which
+      are handled only as described above.
+    </p>
+
+    <h2>Disclaimer of Warranties</h2>
+    <p>
+      The site and all services are provided on an "as is" and "as available" basis. To the fullest extent permitted by
+      law, Palm Readings AI makes no representations or warranties of any kind, express or implied, regarding the accuracy,
+      reliability, completeness, or usefulness of any reading, content, or information, or that the site will be
+      uninterrupted or error-free.
+    </p>
+
+    <h2>Limitation of Liability</h2>
+    <p>
+      To the fullest extent permitted by law, Palm Readings AI shall not be liable for any indirect, incidental,
+      consequential, special, or punitive damages, or for any decisions you make based on a reading, arising out of or
+      related to your use of, or inability to use, the site or services. Our total liability for any claim related to the
+      services is limited to the amount you paid us, if any, in the 12 months before the claim.
+    </p>
+
+    <h2>Indemnification</h2>
+    <p>
+      You agree to indemnify, defend, and hold harmless Palm Readings AI, its owners, operators, employees, contractors,
+      and affiliates from any claims, damages, losses, liabilities, costs, and expenses, including reasonable attorneys’
+      fees, arising from your violation of these Terms, your misuse of the site, or photos you upload without the required
+      permission.
+    </p>
+
+    <h2>Dispute Resolution</h2>
+    <p>
+      <strong>Governing law.</strong> These Terms are governed by the laws of the State of Michigan, without regard to
+      conflict of law principles.
+    </p>
+    <p>
+      <strong>Jurisdiction.</strong> Any legal action arising out of or related to these Terms or your use of the site shall
+      be brought exclusively in the state or federal courts located in Michigan, and you consent to the personal
+      jurisdiction and venue of those courts.
+    </p>
+
+    <h2>Electronic Communications</h2>
+    <p>
+      By using the site or communicating with us electronically, you consent to receive communications electronically and
+      agree that electronic notices satisfy any legal requirement that communications be in writing.
+    </p>
+
+    <h2>Suspension and Termination</h2>
+    <p>
+      We may refuse service, suspend access, or end your use of the site at any time, including for any violation of these
+      Terms.
+    </p>
+
+    <h2>Contact Information</h2>
+    <p>
+      If you have questions about these Terms, please contact us through our <a href="/contact/">contact form</a> or by
+      email at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+    </p>
   </div>
 </Page>

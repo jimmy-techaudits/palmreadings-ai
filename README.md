@@ -72,7 +72,7 @@ Do these in order. Nothing changes for visitors until step 5.
 ## Before launch
 
 - **Bot protection (Turnstile) and rate limiting** on `/api/reading` and `/api/contact`.
-- **Legal review**: the Privacy Policy and Terms were copied from WordPress unchanged. They don't
-  mention sending photos to an AI provider, and the Terms grant a perpetual right to store palm images,
-  which contradicts the app's "photos are not stored" consent text.
+- **Legal review**: the Privacy Policy and Terms were rewritten (Nov 2026) to match how the site handles data
+  (photos sent to an AI provider and not stored, 18+, consent for a partner's photos, paid readings).
+  Have a legal advisor review them before launch.
 - Payments (Stripe), saved/shareable readings, email capture.
