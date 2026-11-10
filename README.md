@@ -134,6 +134,22 @@ after two days by the daily cron.
 with `npx wrangler secret put TURNSTILE_SECRET_KEY`. Also set `RATE_LIMIT_SALT` as a secret. To try it
 locally, use Cloudflare's test keys from `.dev.vars.example`.
 
+## Agreed plan for payments and free readings (not built yet)
+
+- **Free reading:** one per visitor. It generates the full reading but shows only a preview (summary,
+  traits, 2 sections); paying unlocks the rest of that same reading.
+- **Email:** an email box is the main path on the free reading, with a subtle "Continue without email"
+  link. Entering an email means agreeing to follow-up and marketing emails (stated plainly, with the
+  time and wording stored as proof of consent). Every email has an unsubscribe link and a postal address.
+- **Recognizing returning visitors:** email if given, otherwise a long-lived cookie plus a hashed-IP
+  backstop (about 3 free readings per IP, for shared networks).
+- **Paid readings:** paid up front with Stripe and never blocked: they skip the per-visitor limits, the
+  daily cap and the bot check, and can be retried if generation fails. The daily cap applies to free
+  readings only.
+- **Email sending:** Google Workspace (Business Starter). Reading-link emails go out through the Gmail
+  API from a palmreadings.ai address. The subscriber list lives in D1 and is exported to Google Sheets
+  for campaigns; upgrading to Business Standard adds Gmail multi-send for newsletters.
+
 ## Before launch
 
 - **Legal review**: the Privacy Policy and Terms were rewritten (Nov 2026) to match how the site handles data
