@@ -1,4 +1,5 @@
 import type { Env } from '../env';
+import { checkLimits, clientIp, CONTACT_LIMITS, verifyTurnstile } from '../protect';
 
 interface ContactForm {
   name?: string;
@@ -7,6 +8,8 @@ interface ContactForm {
   message?: string;
   /** Honeypot: real visitors never fill this hidden field. */
   website?: string;
+  /** Turnstile token, posted by the widget as cf-turnstile-response. */
+  'cf-turnstile-response'?: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,6 +30,11 @@ export async function handleContact(request: Request, env: Env): Promise<Respons
   if (!name || !EMAIL_RE.test(email) || message.length < 5) {
     return Response.json({ error: 'Please fill in your name, a valid email, and a message.' }, { status: 400 });
   }
+
+  const botError = await verifyTurnstile(env, body['cf-turnstile-response'], clientIp(request));
+  if (botError) return Response.json({ error: botError }, { status: 403 });
+  const limited = await checkLimits(env, request, CONTACT_LIMITS);
+  if (limited) return Response.json({ error: limited }, { status: 429 });
 
   const text = `From: ${name} <${email}>\nSubject: ${subject}\n\n${message}`;
   try {

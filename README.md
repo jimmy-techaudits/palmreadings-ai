@@ -113,9 +113,29 @@ Do these in order. Nothing changes for visitors until step 5.
 6. **Check**: every page, the reading flow, the contact form, an email to and from hello@palmreadings.ai.
 7. **Cancel EasyWP** once everything has worked for a few days.
 
+## Bot protection and rate limits
+
+`server/protect.ts`. `/api/reading` and `/api/contact` require a Cloudflare Turnstile token (invisible
+for most visitors) and are rate limited per visitor (by hashed IP) and, for readings, by an overall
+daily cap that bounds AI spend:
+
+| Limit | Default | Setting |
+|---|---|---|
+| Readings per visitor per hour | 5 | `READINGS_PER_HOUR_PER_IP` |
+| Readings per visitor per day | 15 | `READINGS_PER_DAY_PER_IP` |
+| Readings per day, everyone | 500 | `READINGS_PER_DAY_TOTAL` |
+| Contact messages per visitor per hour | 5 | – |
+
+Limits are skipped on localhost (set `ENFORCE_LIMITS_LOCALLY=true` to test them). Counters are purged
+after two days by the daily cron.
+
+**Turnstile setup:** Cloudflare dashboard → Turnstile → Add widget for `palmreadings.ai` (mode
+"Managed"). Put the site key in `.env` as `PUBLIC_TURNSTILE_SITE_KEY` before building, and the secret
+with `npx wrangler secret put TURNSTILE_SECRET_KEY`. Also set `RATE_LIMIT_SALT` as a secret. To try it
+locally, use Cloudflare's test keys from `.dev.vars.example`.
+
 ## Before launch
 
-- **Bot protection (Turnstile) and rate limiting** on `/api/reading` and `/api/contact`.
 - **Legal review**: the Privacy Policy and Terms were rewritten (Nov 2026) to match how the site handles data
   (readings kept until deleted, photos deleted 3 years after last opened, optional marketing
   permission for photos, anonymized stats in marketing, 18+, consent for a partner's photos, paid

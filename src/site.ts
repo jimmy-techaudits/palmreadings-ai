@@ -16,3 +16,6 @@ export const IMAGES = {
 
 export const CONTACT_EMAIL = 'hello@palmreadings.ai';
 export const GA_ID = 'G-LW61254S51';
+
+/** Cloudflare Turnstile site key (public). Leave unset locally to skip the bot check. */
+export const TURNSTILE_SITE_KEY: string = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';

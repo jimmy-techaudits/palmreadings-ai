@@ -23,3 +23,15 @@ GEMINI_API_KEY=
 # CONTACT_TO_EMAIL=hello@palmreadings.ai
 # CONTACT_FROM_EMAIL=Palm Readings AI <website@palmreadings.ai>
 # CONTACT_WEBHOOK_URL=
+
+# Bot protection (Cloudflare Turnstile). Leave unset to skip the check locally.
+# Cloudflare's always-pass test secret, to try the full flow:
+# TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+# The matching public site key goes in .env (read at build time):
+#   PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+
+# Rate limits (defaults shown). Skipped on localhost unless ENFORCE_LIMITS_LOCALLY=true.
+# READINGS_PER_HOUR_PER_IP=5
+# READINGS_PER_DAY_PER_IP=15
+# READINGS_PER_DAY_TOTAL=500
+# RATE_LIMIT_SALT=any-long-random-string

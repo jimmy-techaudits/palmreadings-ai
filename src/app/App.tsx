@@ -7,6 +7,7 @@ import { Results } from './components/Results';
 import { StepChoose } from './components/StepChoose';
 import { StepDetails, type PersonDraft } from './components/StepDetails';
 import { StepPhotos } from './components/StepPhotos';
+import { Turnstile, turnstileEnabled } from './components/Turnstile';
 import { Button, Stepper } from './components/ui';
 import { requestReading, track } from './lib/api';
 import { stripDataUrl } from './lib/image';
@@ -38,6 +39,9 @@ export default function App() {
   const [issues, setIssues] = useState<Partial<Record<SlotId, string>>>({});
   const [consent, setConsent] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
+  const [botToken, setBotToken] = useState<string | null>(null);
+  // Turnstile tokens are single-use; bumping this re-mounts the widget for a fresh one.
+  const [botKey, setBotKey] = useState(0);
   const [stage, setStage] = useState<Stage | null>(null);
   const [observations, setObservations] = useState<PersonObservation[] | null>(null);
   const [error, setError] = useState('');
@@ -94,7 +98,10 @@ export default function App() {
       })),
       photos: Object.entries(photos).map(([slot, data]) => ({ slot: slot as SlotId, data: stripDataUrl(data!) })),
       marketingConsent,
+      turnstileToken: botToken ?? undefined,
     };
+    setBotToken(null);
+    setBotKey((k) => k + 1);
 
     setIssues({});
     setStage(null);
@@ -185,6 +192,8 @@ export default function App() {
             consent={consent}
             marketingConsent={marketingConsent}
             onMarketingConsent={setMarketingConsent}
+            botCheck={<Turnstile key={botKey} onToken={setBotToken} />}
+            botReady={!turnstileEnabled || !!botToken}
             onPhoto={(slot, v) => {
               setPhotos((prev) => {
                 const next = { ...prev };

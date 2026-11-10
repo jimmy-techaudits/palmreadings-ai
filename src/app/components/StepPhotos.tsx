@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { AlertCircle, ArrowLeft, Camera, Hand as HandIcon, Loader2, RefreshCw, ShieldCheck, Sparkles, Sun, X, ZoomIn } from 'lucide-react';
 import type { SlotSpec } from '../../../shared/plan';
 import type { Mode, SlotId } from '../../../shared/types';
@@ -17,6 +17,9 @@ interface Props {
   onPhoto: (slot: SlotId, dataUrl: string | null) => void;
   onConsent: (v: boolean) => void;
   onMarketingConsent: (v: boolean) => void;
+  /** Bot check widget, and whether it has produced a token yet. */
+  botCheck: ReactNode;
+  botReady: boolean;
   onBack: () => void;
   onSubmit: () => void;
 }
@@ -28,9 +31,10 @@ const TIPS = [
 ];
 
 export function StepPhotos({
-  mode, people, slots, photos, issues, consent, marketingConsent, onPhoto, onConsent, onMarketingConsent, onBack, onSubmit,
+  mode, people, slots, photos, issues, consent, marketingConsent, onPhoto, onConsent, onMarketingConsent, botCheck, botReady,
+  onBack, onSubmit,
 }: Props) {
-  const ready = consent && slots.every((s) => !s.required || photos[s.slot]);
+  const ready = consent && botReady && slots.every((s) => !s.required || photos[s.slot]);
   const missing = slots.filter((s) => s.required && !photos[s.slot]).length;
 
   return (
@@ -95,11 +99,19 @@ export function StepPhotos({
         </span>
       </label>
 
-      <div className="mt-8 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6">{botCheck}</div>
+
+      <div className="mt-6 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button variant="ghost" onClick={onBack}><ArrowLeft size={18} /> Back</Button>
         <Button onClick={onSubmit} disabled={!ready} className="sm:min-w-64">
           <Sparkles size={18} />
-          {ready ? 'Reveal my reading' : missing > 0 ? `Add ${missing} more photo${missing > 1 ? 's' : ''}` : 'Tick the box to continue'}
+          {ready
+            ? 'Reveal my reading'
+            : missing > 0
+              ? `Add ${missing} more photo${missing > 1 ? 's' : ''}`
+              : !consent
+                ? 'Tick the box to continue'
+                : 'Checking your connection…'}
         </Button>
       </div>
     </section>

@@ -1,6 +1,6 @@
 ---
 import Page from '../layouts/Page.astro';
-import { CONTACT_EMAIL } from '../site';
+import { CONTACT_EMAIL, TURNSTILE_SITE_KEY } from '../site';
 
 const field =
   'w-full rounded-xl border border-white/10 bg-night-900/70 px-4 py-3 text-white placeholder:text-violet-300/40 focus:border-gold-400 focus:outline-none';
@@ -37,6 +37,7 @@ const field =
       </label>
       <!-- Honeypot for bots; hidden from people and screen readers. -->
       <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] h-0 w-0 opacity-0" />
+      {TURNSTILE_SITE_KEY && <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="dark" data-appearance="interaction-only"></div>}
       <button type="submit" class="w-full rounded-[10px] bg-gold-400 px-6 py-3 font-bold text-plum-900 transition hover:bg-gold-500 disabled:opacity-60">
         Send message
       </button>
@@ -50,6 +51,8 @@ const field =
     </aside>
   </div>
 </Page>
+
+{TURNSTILE_SITE_KEY && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 
 <script>
   const form = document.getElementById('contact-form') as HTMLFormElement;
@@ -76,6 +79,8 @@ const field =
       status.className = 'text-center text-sm font-bold text-red-300';
     } finally {
       button.disabled = false;
+      // Turnstile tokens are single-use.
+      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
     }
   });
 </script>

@@ -29,6 +29,8 @@ export interface ReadingRequest {
   photos: PhotoInput[];
   /** Optional, separate permission to use the palm photos in marketing. */
   marketingConsent?: boolean;
+  /** Cloudflare Turnstile token. */
+  turnstileToken?: string;
 }
 
 // ---------- Stage 1: what the model observed in the photos ----------

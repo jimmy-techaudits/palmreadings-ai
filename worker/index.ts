@@ -5,6 +5,7 @@ import { handleReading } from '../server/api/reading';
 import { handleAdmin, handleSavedReading } from '../server/api/readings';
 import type { Env } from '../server/env';
 import { expireOldPhotos } from '../server/store';
+import { purgeRateLimits } from '../server/protect';
 
 const POST_API: Record<string, (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>> = {
   '/api/reading': handleReading,
@@ -69,5 +70,6 @@ export default {
         if (n) console.log(`Photo retention: deleted photos for ${n} reading(s)`);
       }),
     );
+    ctx.waitUntil(purgeRateLimits(env));
   },
 } satisfies ExportedHandler<Env>;

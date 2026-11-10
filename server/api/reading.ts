@@ -4,6 +4,7 @@ import { runReading } from '../pipeline';
 import { getProvider } from '../providers';
 import { validateRequest } from '../validate';
 import { saveReading } from '../store';
+import { checkLimits, clientIp, READING_LIMITS, verifyTurnstile } from '../protect';
 
 const MAX_BODY_BYTES = 12_000_000;
 
@@ -20,6 +21,11 @@ export async function handleReading(request: Request, env: Env, ctx: ExecutionCo
   }
   const invalid = validateRequest(body);
   if (invalid) return Response.json({ error: invalid }, { status: 400 });
+
+  const botError = await verifyTurnstile(env, body.turnstileToken, clientIp(request));
+  if (botError) return Response.json({ error: botError }, { status: 403 });
+  const limited = await checkLimits(env, request, READING_LIMITS(env));
+  if (limited) return Response.json({ error: limited }, { status: 429 });
 
   let provider;
   try {
