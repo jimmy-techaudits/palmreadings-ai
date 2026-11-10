@@ -32,9 +32,10 @@ const year = new Date().getFullYear();
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={IMAGES.appScreens} />
+    <meta property="og:image" content={new URL(IMAGES.logo, Astro.site).toString()} />
     <meta name="theme-color" content="#040713" />
-    <link rel="icon" href={IMAGES.favicon} />
+    <link rel="icon" type="image/png" sizes="32x32" href={IMAGES.favicon} />
+    <link rel="apple-touch-icon" href={IMAGES.appleTouchIcon} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
