@@ -13,8 +13,10 @@ interface Props {
   photos: Partial<Record<SlotId, string>>;
   issues: Partial<Record<SlotId, string>>;
   consent: boolean;
+  marketingConsent: boolean;
   onPhoto: (slot: SlotId, dataUrl: string | null) => void;
   onConsent: (v: boolean) => void;
+  onMarketingConsent: (v: boolean) => void;
   onBack: () => void;
   onSubmit: () => void;
 }
@@ -25,7 +27,9 @@ const TIPS = [
   { icon: ZoomIn, text: 'Fill the frame from wrist to fingertips, in focus.' },
 ];
 
-export function StepPhotos({ mode, people, slots, photos, issues, consent, onPhoto, onConsent, onBack, onSubmit }: Props) {
+export function StepPhotos({
+  mode, people, slots, photos, issues, consent, marketingConsent, onPhoto, onConsent, onMarketingConsent, onBack, onSubmit,
+}: Props) {
   const ready = consent && slots.every((s) => !s.required || photos[s.slot]);
   const missing = slots.filter((s) => s.required && !photos[s.slot]).length;
 
@@ -74,10 +78,20 @@ export function StepPhotos({ mode, people, slots, photos, issues, consent, onPho
         <span className="text-sm leading-relaxed text-violet-100">
           <span className="flex items-center gap-2 font-bold text-white"><ShieldCheck size={18} className="text-gold-400" /> Your photos &amp; privacy</span>
           Your photos are analyzed by our AI provider, and your photos and reading are saved at a private link so you can come back
-          anytime. You can delete them from that link whenever you like. By continuing, you confirm you’re 18 or older{mode === 'couple' ? ', your partner has agreed to share their photos,' : ''} and
+          anytime. You can delete them there whenever you like, and photos are removed automatically three years after you last
+          open your reading. By continuing, you confirm you’re 18 or older{mode === 'couple' ? ', your partner has agreed to share their photos,' : ''} and
           you agree to our{' '}
           <a href="/terms/" target="_blank" className="text-gold-400 underline">Terms</a> and{' '}
           <a href="/privacy-policy/" target="_blank" className="text-gold-400 underline">Privacy Policy</a>.
+        </span>
+      </label>
+
+      <label className="mt-3 flex cursor-pointer items-start gap-4 px-5 py-2">
+        <input type="checkbox" className="mt-1 size-5 accent-gold-400" checked={marketingConsent} onChange={(e) => onMarketingConsent(e.target.checked)} />
+        <span className="text-sm leading-relaxed text-violet-200/90">
+          <span className="font-bold text-white">Optional:</span> Palm Readings AI may use my palm photos
+          {mode === 'couple' ? ' (and, with their agreement, my partner’s)' : ''} in its marketing, such as on social media or the
+          website. Never with your name. You can change this anytime from your reading’s private link.
         </span>
       </label>
 

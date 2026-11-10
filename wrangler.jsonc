@@ -22,6 +22,8 @@
     { "binding": "DB", "database_name": "palmreadings", "database_id": "REPLACE_WITH_DATABASE_ID", "migrations_dir": "migrations" }
   ],
   "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "palmreadings-photos" }],
+  // Daily photo retention job (see expireOldPhotos in server/store.ts).
+  "triggers": { "crons": ["17 4 * * *"] },
   // Non-secret settings. Secrets (API keys) go in .dev.vars locally and
   // `wrangler secret put NAME` (or the dashboard) in production.
   "vars": {

@@ -37,6 +37,7 @@ export default function App() {
   const [photos, setPhotos] = useState<Partial<Record<SlotId, string>>>({});
   const [issues, setIssues] = useState<Partial<Record<SlotId, string>>>({});
   const [consent, setConsent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [stage, setStage] = useState<Stage | null>(null);
   const [observations, setObservations] = useState<PersonObservation[] | null>(null);
   const [error, setError] = useState('');
@@ -72,6 +73,7 @@ export default function App() {
     setPhotos({});
     setIssues({});
     setConsent(false);
+    setMarketingConsent(false);
     setObservations(null);
     setStage(null);
     setIncludeFamily(false);
@@ -91,6 +93,7 @@ export default function App() {
         dominantHand: p.dominantHand!,
       })),
       photos: Object.entries(photos).map(([slot, data]) => ({ slot: slot as SlotId, data: stripDataUrl(data!) })),
+      marketingConsent,
     };
 
     setIssues({});
@@ -180,6 +183,8 @@ export default function App() {
             photos={photos}
             issues={issues}
             consent={consent}
+            marketingConsent={marketingConsent}
+            onMarketingConsent={setMarketingConsent}
             onPhoto={(slot, v) => {
               setPhotos((prev) => {
                 const next = { ...prev };

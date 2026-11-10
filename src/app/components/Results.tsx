@@ -30,10 +30,13 @@ interface ResultsProps {
   /** Set when the reading is saved at a private link. */
   readingId?: string;
   photos?: ResultPhoto[];
+  /** True when photos were removed under the 3-year retention rule. */
+  photosRemoved?: boolean;
+  marketingConsent?: { value: boolean; onChange: (v: boolean) => Promise<void> };
   onDelete?: () => Promise<void>;
 }
 
-export function Results({ saved, onReset, readingId, photos, onDelete }: ResultsProps) {
+export function Results({ saved, onReset, readingId, photos, photosRemoved, marketingConsent, onDelete }: ResultsProps) {
   const { reading, observations, mode, focus, names } = saved;
   const title = mode === 'couple' ? `${names[0] || 'Partner A'} & ${names[1] || 'Partner B'}` : names[0] ? `${names[0]}’s Reading` : 'Your Reading';
 
@@ -59,6 +62,12 @@ export function Results({ saved, onReset, readingId, photos, onDelete }: Results
       </ul>
 
       {photos && photos.length > 0 && <PhotoStrip photos={photos} />}
+      {photosRemoved && (
+        <p className="panel mb-5 p-4 text-sm text-violet-200/80 print:hidden">
+          The photos for this reading were removed after three years without being opened. Your reading is still here.
+        </p>
+      )}
+      {marketingConsent && !photosRemoved && <MarketingToggle {...marketingConsent} />}
 
       <ObservedPanel observations={observations} names={names} mode={mode} />
 
@@ -344,5 +353,31 @@ function DeleteBox({ onDelete }: { onDelete: () => Promise<void> }) {
         </div>
       )}
     </div>
+  );
+}
+
+function MarketingToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => Promise<void> }) {
+  const [checked, setChecked] = useState(value);
+  const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  async function toggle(v: boolean) {
+    setChecked(v);
+    setState('saving');
+    try {
+      await onChange(v);
+      setState('saved');
+    } catch {
+      setChecked(!v);
+      setState('error');
+    }
+  }
+  return (
+    <label className="mb-8 flex cursor-pointer items-start gap-3 text-sm text-violet-200/90 print:hidden">
+      <input type="checkbox" className="mt-0.5 size-5 accent-gold-400" checked={checked} disabled={state === 'saving'} onChange={(e) => toggle(e.target.checked)} />
+      <span>
+        Palm Readings AI may use these palm photos in its marketing (never with your name).
+        {state === 'saved' && <span className="ml-2 font-bold text-gold-400">Saved</span>}
+        {state === 'error' && <span className="ml-2 font-bold text-red-300">Couldn’t save, please try again</span>}
+      </span>
+    </label>
   );
 }

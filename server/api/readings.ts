@@ -1,6 +1,6 @@
 import { READING_ID_RE, type SlotId } from '../../shared/types';
 import type { Env } from '../env';
-import { deleteReading, getPhoto, getReading } from '../store';
+import { deleteReading, getPhoto, getReading, setMarketingConsent } from '../store';
 
 const SLOT_RE = /^p[01]-(left|right)-(palm|side)$/;
 const PRIVATE = { 'cache-control': 'private, no-store', 'x-robots-tag': 'noindex', 'referrer-policy': 'no-referrer' };
@@ -22,6 +22,12 @@ export async function handleSavedReading(request: Request, env: Env, path: strin
   if (request.method === 'GET') {
     const data = await getReading(env, id);
     return data ? Response.json(data, { headers: PRIVATE }) : Response.json({ error: 'Not found' }, { status: 404, headers: PRIVATE });
+  }
+  if (request.method === 'PATCH') {
+    const body = (await request.json().catch(() => null)) as { marketingConsent?: unknown } | null;
+    if (typeof body?.marketingConsent !== 'boolean') return Response.json({ error: 'Invalid request' }, { status: 400 });
+    const found = await setMarketingConsent(env, id, body.marketingConsent);
+    return found ? new Response(null, { status: 204 }) : Response.json({ error: 'Not found' }, { status: 404 });
   }
   if (request.method === 'DELETE') {
     const existed = await deleteReading(env, id);

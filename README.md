@@ -27,9 +27,11 @@ Comfortaa UI text, Nunito Sans for long reading text.
    - **Interpret** – one text-only call writes the reading from those observations plus the
      palmistry rulebook (`server/rulebook.ts`) in a fixed structure (`server/schemas.ts`). Each
      section lists the features it is based on.
-5. **Saved at a private link** – the reading (D1) and its photos (R2) are stored with no expiry and
-   the browser moves to `/r/<id>/` (a 128-bit random id, not indexed by search engines). Anyone with
-   the link can view or delete it. No user accounts.
+5. **Saved at a private link** – the reading (D1) and its photos (R2) are stored and the browser moves to `/r/<id>/` (a 128-bit random id, not indexed by search engines). Anyone with
+   the link can view or delete it. No user accounts. Readings are kept until deleted; **photos are
+   deleted 3 years after the link was last opened** by a daily cron job (`expireOldPhotos` in
+   `server/store.ts`). An optional checkbox records permission to use the photos in marketing; it can
+   be changed later on the private link.
 6. **Results** – headline, traits, "What we saw in your hands", sections, family predictions (if opted
    in), action steps, mantra, print-to-PDF, feedback.
 
@@ -49,6 +51,16 @@ curl -X DELETE https://palmreadings.ai/api/admin/readings/<id> -H "Authorization
 ```
 
 Set the token once with `npx wrangler secret put ADMIN_TOKEN` (any long random string).
+
+**Photos you may use in marketing** (permission given and photos not yet expired):
+
+```bash
+npx wrangler d1 execute palmreadings --remote --command \
+  "SELECT id, marketing_consent_at FROM readings WHERE marketing_consent = 1 AND photos_deleted_at IS NULL"
+npx wrangler r2 object get palmreadings-photos/readings/<id>/p0-right-palm.jpg --remote --file palm.jpg
+```
+
+Re-check consent before each new use; people can withdraw it.
 
 **Marketing stats** (anonymous columns only, never `data`):
 
@@ -105,9 +117,7 @@ Do these in order. Nothing changes for visitors until step 5.
 
 - **Bot protection (Turnstile) and rate limiting** on `/api/reading` and `/api/contact`.
 - **Legal review**: the Privacy Policy and Terms were rewritten (Nov 2026) to match how the site handles data
-  (readings and photos stored until deleted at the private link or by email, anonymized stats in
-  marketing, 18+, consent for a partner's photos, paid readings). Have a legal advisor review them
-  before launch, in particular storing palm photos with no retention limit: Illinois (BIPA), Texas and
-  Washington have biometric laws that may require a retention schedule (BIPA: deletion within 3 years
-  of the person's last interaction).
+  (readings kept until deleted, photos deleted 3 years after last opened, optional marketing
+  permission for photos, anonymized stats in marketing, 18+, consent for a partner's photos, paid
+  readings). Have a legal advisor review them before launch.
 - Payments (Stripe), email capture (e.g. email me my private link).

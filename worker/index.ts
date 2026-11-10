@@ -4,6 +4,7 @@ import { handleFeedback } from '../server/api/feedback';
 import { handleReading } from '../server/api/reading';
 import { handleAdmin, handleSavedReading } from '../server/api/readings';
 import type { Env } from '../server/env';
+import { expireOldPhotos } from '../server/store';
 
 const POST_API: Record<string, (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>> = {
   '/api/reading': handleReading,
@@ -59,5 +60,14 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  // Daily: delete photos of readings not opened in 3 years (the readings themselves are kept).
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(
+      expireOldPhotos(env).then((n) => {
+        if (n) console.log(`Photo retention: deleted photos for ${n} reading(s)`);
+      }),
+    );
   },
 } satisfies ExportedHandler<Env>;

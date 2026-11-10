@@ -27,6 +27,8 @@ export interface ReadingRequest {
   includeFamily: boolean;
   people: Person[];
   photos: PhotoInput[];
+  /** Optional, separate permission to use the palm photos in marketing. */
+  marketingConsent?: boolean;
 }
 
 // ---------- Stage 1: what the model observed in the photos ----------
@@ -132,6 +134,9 @@ export interface SavedReadingData {
   reading: Reading;
   observations: PersonObservation[];
   photoSlots: SlotId[];
+  /** Set once the photos have been deleted under the 3-year retention rule. */
+  photosDeletedAt: string | null;
+  marketingConsent: boolean;
 }
 
 /** Private-link ids: 22 base64url characters (128 random bits). */

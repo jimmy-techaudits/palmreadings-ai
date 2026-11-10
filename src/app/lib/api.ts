@@ -62,3 +62,12 @@ export async function deleteSavedReading(id: string): Promise<void> {
 }
 
 export const photoUrl = (id: string, slot: string) => `/api/readings/${encodeURIComponent(id)}/photos/${slot}`;
+
+export async function updateMarketingConsent(id: string, marketingConsent: boolean): Promise<void> {
+  const res = await fetch(`/api/readings/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ marketingConsent }),
+  });
+  if (!res.ok) throw new ApiError('We could not save your choice. Please try again.');
+}

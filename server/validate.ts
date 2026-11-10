@@ -18,6 +18,7 @@ export function validateRequest(body: unknown): string | null {
     if (p.pronouns !== undefined && (typeof p.pronouns !== 'string' || p.pronouns.length > 30)) return 'Invalid pronouns';
     if (p.age !== undefined && (!Number.isInteger(p.age) || p.age < 1 || p.age > 120)) return 'Invalid age';
   }
+  if (r.marketingConsent !== undefined && typeof r.marketingConsent !== 'boolean') return 'Invalid marketingConsent';
   if (!Array.isArray(r.photos) || r.photos.length > 6) return 'Invalid photos';
   const allowed = new Set(photoSlots(r.people, r.includeFamily).map((s) => s.slot));
   for (const ph of r.photos) {

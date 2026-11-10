@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import type { SavedReadingData } from '../../shared/types';
 import { Results, type ResultPhoto } from './components/Results';
 import { Button } from './components/ui';
-import { deleteSavedReading, fetchSavedReading, photoUrl } from './lib/api';
+import { deleteSavedReading, fetchSavedReading, photoUrl, updateMarketingConsent } from './lib/api';
 
 function photoLabel(slot: string, data: SavedReadingData): string {
   const [p, hand, view] = slot.split('-');
@@ -51,7 +51,7 @@ export default function SavedReadingView() {
     );
   }
 
-  const photos: ResultPhoto[] = data.photoSlots.map((slot) => ({ slot, url: photoUrl(id, slot), label: photoLabel(slot, data) }));
+  const photos: ResultPhoto[] = data.photosDeletedAt ? [] : data.photoSlots.map((slot) => ({ slot, url: photoUrl(id, slot), label: photoLabel(slot, data) }));
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6">
@@ -66,6 +66,8 @@ export default function SavedReadingView() {
         }}
         readingId={id}
         photos={photos}
+        photosRemoved={!!data.photosDeletedAt}
+        marketingConsent={{ value: data.marketingConsent, onChange: (v) => updateMarketingConsent(id, v) }}
         onReset={startNew}
         onDelete={async () => {
           await deleteSavedReading(id);
