@@ -79,6 +79,13 @@ Sections per reading type: `shared/plan.ts` (each has a `free`/`premium` tier fo
 `OBSERVE_MODEL` / `INTERPRET_MODEL` pick the model per step; Anthropic defaults to `claude-opus-5-5`,
 OpenAI and Gemini require them.
 
+## Comparing AI providers
+
+`npm run compare` runs real palm photos through Anthropic and OpenAI and writes a blind side-by-side
+report to `compare-report/index.html`. Put keys in `.dev.vars` and photos in `test-photos/<person>/`
+(`left.jpg`, `right.jpg`, optional `side.jpg` and `person.json`); details at the top of
+`scripts/compare.ts`. Both folders are git-ignored so photos are never committed.
+
 ## Local development
 
 ```bash
