@@ -1,0 +1,18 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+
+# Which model provider to use: mock | anthropic | openai | gemini
+AI_PROVIDER=mock
+
+# Model overrides (optional for anthropic; required for openai and gemini).
+# OBSERVE_MODEL reads the photos; INTERPRET_MODEL writes the reading.
+# OBSERVE_MODEL=
+# INTERPRET_MODEL=
+
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+
+# Optional: server-side forwarding of feedback / anonymous usage events
+# (e.g. the existing Google Apps Script web app URLs). Kept off the client.
+# FEEDBACK_WEBHOOK_URL=
+# USAGE_WEBHOOK_URL=
