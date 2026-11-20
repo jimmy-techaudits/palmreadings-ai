@@ -84,6 +84,17 @@ function toJpegBase64(file: string): string {
   }
 }
 
+/** Reads person.json, tolerating the curly quotes macOS and TextEdit like to insert. */
+function readPersonConfig(file: string, id: string): PersonConfig | null {
+  const text = readFileSync(file, 'utf8').replace(/[\u201C\u201D\u2033]/g, '"').replace(/[\u2018\u2019]/g, "'");
+  try {
+    return JSON.parse(text) as PersonConfig;
+  } catch (e) {
+    console.warn(`Skipping ${id}: person.json is not valid JSON (${e instanceof Error ? e.message : e}).`);
+    return null;
+  }
+}
+
 function findPhoto(dir: string, base: string): string | null {
   const f = readdirSync(dir).find((n) => IMAGE_EXT.test(n) && path.parse(n).name.toLowerCase() === base);
   return f ? path.join(dir, f) : null;
@@ -101,9 +112,10 @@ function loadPeople(): Person[] {
     process.exit(1);
   }
   const people: Person[] = [];
-  for (const id of readdirSync(folder).sort()) {
+  const dirs = readdirSync(folder, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.name.startsWith('.'));
+  for (const id of dirs.map((d) => d.name).sort()) {
     const dir = path.join(folder, id);
-    if (!existsSync(path.join(dir)) || !readdirSync(dir, { withFileTypes: true }).length) continue;
+    if (!readdirSync(dir).length) continue;
     const left = findPhoto(dir, 'left');
     const right = findPhoto(dir, 'right');
     if (!left || !right) {
@@ -112,7 +124,8 @@ function loadPeople(): Person[] {
     }
     const side = findPhoto(dir, 'side');
     const cfgPath = path.join(dir, 'person.json');
-    const cfg: PersonConfig = existsSync(cfgPath) ? JSON.parse(readFileSync(cfgPath, 'utf8')) : {};
+    const cfg = existsSync(cfgPath) ? readPersonConfig(cfgPath, id) : {};
+    if (cfg === null) continue;
     const dominant: Hand = cfg.dominantHand ?? 'right';
     const includeFamily = cfg.includeFamily ?? Boolean(side);
 
