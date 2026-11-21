@@ -1,5 +1,6 @@
 import { READING_ID_RE } from '../../shared/types';
 import type { Env } from '../env';
+import { sendToGoogle } from '../google';
 import { saveFeedback } from '../store';
 
 interface Feedback {
@@ -20,8 +21,6 @@ export async function handleFeedback(request: Request, env: Env): Promise<Respon
   if (body.rating !== 1 && body.rating !== -1) return Response.json({ error: 'Invalid rating' }, { status: 400 });
 
   const payload = {
-    tab: 'Feedback',
-    timestamp: new Date().toISOString(),
     rating: body.rating,
     comment: String(body.comment ?? '').slice(0, 2000),
     mode: String(body.mode ?? '').slice(0, 20),
@@ -30,12 +29,6 @@ export async function handleFeedback(request: Request, env: Env): Promise<Respon
   if (body.readingId && READING_ID_RE.test(body.readingId)) {
     await saveFeedback(env, body.readingId, body.rating, payload.comment).catch((e) => console.error('Feedback save failed:', e));
   }
-  if (env.FEEDBACK_WEBHOOK_URL) {
-    await fetch(env.FEEDBACK_WEBHOOK_URL, { method: 'POST', body: JSON.stringify(payload) }).catch((e) =>
-      console.error('Feedback forward failed:', e),
-    );
-  } else {
-    console.log('Feedback:', JSON.stringify(payload));
-  }
+  await sendToGoogle(env, 'feedback', payload).catch((e) => console.error('Feedback forward failed:', e));
   return new Response(null, { status: 204 });
 }

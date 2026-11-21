@@ -14,17 +14,16 @@ export interface Env {
   READINGS_PER_DAY_TOTAL?: string;
   /** Set to "true" to apply rate limits on localhost too. */
   ENFORCE_LIMITS_LOCALLY?: string;
-  /** Contact form delivery: Resend API key, or a webhook (e.g. a Google Apps Script that emails you). */
-  RESEND_API_KEY?: string;
-  CONTACT_WEBHOOK_URL?: string;
-  CONTACT_TO_EMAIL?: string;
-  CONTACT_FROM_EMAIL?: string;
+  /**
+   * Google Workspace: the Apps Script web app URL (google-apps-script/Code.gs) and the shared secret
+   * stored in its Script properties. Used for contact emails and the feedback/usage log.
+   */
+  GOOGLE_SCRIPT_URL?: string;
+  GOOGLE_SCRIPT_SECRET?: string;
   AI_PROVIDER?: string;
   OBSERVE_MODEL?: string;
   INTERPRET_MODEL?: string;
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
   GEMINI_API_KEY?: string;
-  FEEDBACK_WEBHOOK_URL?: string;
-  USAGE_WEBHOOK_URL?: string;
 }

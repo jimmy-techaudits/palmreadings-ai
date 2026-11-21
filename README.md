@@ -131,26 +131,80 @@ Stop the server with Ctrl+C.
 For hot reload: `npm run preview` (Worker on :8787) in one terminal, `npm run dev` (Astro on :4321,
 proxies /api) in another.
 
-## Moving palmreadings.ai from EasyWP to Cloudflare
+## Contact form and Google Workspace
 
-Do these in order. Nothing changes for visitors until step 5.
+The contact form, feedback and anonymous usage log go through one Google Apps Script in your Google
+Workspace (`google-apps-script/Code.gs`). It emails each contact message to hello@palmreadings.ai from
+your Workspace account (Reply goes to the visitor) and logs messages, feedback and usage to tabs in a
+Google Sheet. The website only needs the script's URL and a shared secret.
 
-1. **Back up WordPress**: Tools → Export (done), plus a full EasyWP backup.
-2. **Images**: done. All images are self-hosted in `public/images/`.
-3. **Add the domain to Cloudflare** (free plan). Cloudflare scans existing DNS; then check every
-   record against Namecheap's Advanced DNS, especially the **Google Workspace email records**:
-   the MX records, the SPF TXT (`v=spf1 include:_spf.google.com ~all`), DKIM (`google._domainkey`), DMARC
-   (`_dmarc`), and any Google site-verification TXT. Missing any of these breaks email.
-4. **Deploy**: `npx wrangler login`. Create storage once: `npx wrangler d1 create palmreadings` (paste
-   the `database_id` into `wrangler.jsonc`), `npx wrangler r2 bucket create palmreadings-photos`, and
-   `npx wrangler d1 migrations apply palmreadings --remote`. Then `npm run deploy`. Set secrets with
-   `npx wrangler secret put ANTHROPIC_API_KEY` (etc.) and change `AI_PROVIDER` in `wrangler.jsonc`.
-   Test on the `*.workers.dev` URL.
-5. **Switch nameservers** at Namecheap to the two Cloudflare gives you. After it's active, uncomment
-   the `routes` block in `wrangler.jsonc` and deploy again. That attaches `palmreadings.ai`,
-   `www` and `app` to the Worker and replaces the old EasyWP / app records.
-6. **Check**: every page, the reading flow, the contact form, an email to and from hello@palmreadings.ai.
-7. **Cancel EasyWP** once everything has worked for a few days.
+1. Signed in to Google Workspace, create a Google Sheet, e.g. "Palm Readings AI log".
+2. **Extensions → Apps Script**. Replace the code with `google-apps-script/Code.gs` and save.
+3. **Project Settings → Script properties → Add property**: `SECRET` = a long random string
+   (`openssl rand -hex 24` makes one). Optional: `CONTACT_TO` if messages should go somewhere other than
+   hello@palmreadings.ai.
+4. **Deploy → New deployment → Web app**. Execute as: **Me**. Who has access: **Anyone**. Deploy,
+   authorize, and copy the web app URL.
+5. Locally, put both in `.dev.vars`: `GOOGLE_SCRIPT_URL=...` and `GOOGLE_SCRIPT_SECRET=...`. In
+   production: `npx wrangler secret put GOOGLE_SCRIPT_URL` and `npx wrangler secret put GOOGLE_SCRIPT_SECRET`.
+6. After changing the script later: **Deploy → Manage deployments → edit → Version: New version** (the
+   URL stays the same).
+
+Without these settings, contact messages are only printed in the terminal (fine for local work).
+
+## Launch checklist
+
+Do these in order. Nothing changes for visitors until the nameservers move (step 6).
+
+1. **Back up WordPress**: Tools → Export (done), plus a full EasyWP backup. Images are already self-hosted.
+2. **Cloudflare account** (free plan) and `npx wrangler login` on your Mac.
+3. **Storage**, once:
+   ```bash
+   npx wrangler d1 create palmreadings          # paste the database_id into wrangler.jsonc
+   npx wrangler r2 bucket create palmreadings-photos
+   npx wrangler d1 migrations apply palmreadings --remote
+   ```
+4. **Bot check**: Cloudflare dashboard → Turnstile → Add widget for `palmreadings.ai` (and the
+   `*.workers.dev` host while testing), mode "Managed". Put the site key in `.env` as
+   `PUBLIC_TURNSTILE_SITE_KEY` (it's built into the pages).
+5. **Secrets** (`npx wrangler secret put NAME` for each), then `npm run deploy` and test everything on the
+   `*.workers.dev` address (it is automatically kept out of search engines):
+   - `OPENAI_API_KEY` (and `ANTHROPIC_API_KEY` if you switch providers). `AI_PROVIDER` and the models are
+     set in `wrangler.jsonc`.
+   - `TURNSTILE_SECRET_KEY`, `RATE_LIMIT_SALT` (any long random string), `ADMIN_TOKEN` (for deletion requests).
+   - `GOOGLE_SCRIPT_URL`, `GOOGLE_SCRIPT_SECRET` (see above).
+   - Set a monthly spending limit in your OpenAI account.
+6. **Move the domain**: add palmreadings.ai to Cloudflare, which copies the existing DNS records. Check every
+   record against Namecheap's Advanced DNS, especially the **Google Workspace email records**: the MX
+   records, the SPF TXT (`v=spf1 include:_spf.google.com ~all`), DKIM (`google._domainkey`), DMARC
+   (`_dmarc`) and any Google site-verification TXT. Missing any of these breaks email. Then switch the
+   nameservers at Namecheap to Cloudflare's two.
+7. **Attach the domain**: once Cloudflare shows the domain as active, uncomment the `routes` block in
+   `wrangler.jsonc` and `npm run deploy` again (attaches palmreadings.ai, www and app). In Cloudflare →
+   SSL/TLS → Edge Certificates, turn on **Always Use HTTPS**.
+8. **Check**: every page, a full reading, the contact form (a message arrives in hello@ and in the Sheet),
+   an email to and from hello@palmreadings.ai, and that www.palmreadings.ai and app.palmreadings.ai
+   redirect. `https://palmreadings.ai/robots.txt` should show the sitemap line, not "Disallow: /".
+9. **Search engines**: in Google Search Console (and Bing Webmaster Tools), submit
+   `https://palmreadings.ai/sitemap.xml` and request indexing of the home page. Old WordPress sitemap,
+   feed and archive URLs already redirect.
+10. **Cancel EasyWP** once everything has worked for a few days.
+
+## SEO
+
+- Titles (under 60 characters) and descriptions are set per page; every public page gets a canonical
+  URL, Open Graph/Twitter tags with `public/images/og-palm-readings-ai.jpg`, and JSON-LD (Organization
+  with the legal name, WebSite, the page type, breadcrumbs, and the palm reading Service on the home and
+  reading pages). All of it is in `src/seo.ts` and `src/layouts/Base.astro`.
+- `/sitemap.xml` is generated from `PUBLIC_PAGES` in `src/seo.ts`: **add new public pages there** and bump
+  `updated` when a page changes meaningfully. `public/robots.txt` points to it.
+- Private reading links (`/r/...`) and the 404 page are `noindex`. Any host other than palmreadings.ai
+  (such as `*.workers.dev`) sends `noindex` and a robots.txt that blocks everything.
+- Fonts are self-hosted (`@fontsource/*` in `global.css`), so no requests go to Google Fonts.
+- Content ideas with real search volume (US, Semrush, Nov 2026): palm reading lines (12,100/month), palm
+  lines meaning (2,400), read my palm (880), palm reading love line (880), palm reading marriage line (720,
+  low difficulty), life line (590), fate line (590), heart line (390). Guides on each line would be the
+  biggest organic opportunity after launch.
 
 ## Bot protection and rate limits
 
@@ -191,8 +245,7 @@ locally, use Cloudflare's test keys from `.dev.vars.example`.
 
 ## Before launch
 
-- **Legal review**: the Privacy Policy and Terms were rewritten (Nov 2026) to match how the site handles data
-  (readings kept until deleted, photos deleted 3 years after last opened, optional marketing
-  permission for photos, anonymized stats in marketing, 18+, consent for a partner's photos, paid
-  readings). Have a legal advisor review them before launch.
-- Payments (Stripe), email capture (e.g. email me my private link).
+- **Legal review** of the Privacy Policy, Terms of Use and Refund Policy (drafts written Nov 2026 to
+  match how the site handles data, payments and refunds).
+- Payments (Stripe) and the limited free reading.
+- Cookie consent banner for visitors from the EU/EEA, UK and Switzerland (Google Consent Mode).

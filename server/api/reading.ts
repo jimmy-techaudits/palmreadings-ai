@@ -1,6 +1,7 @@
 import type { ReadingRequest, StreamEvent } from '../../shared/types';
 import type { Env } from '../env';
 import { runReading } from '../pipeline';
+import { sendToGoogle } from '../google';
 import { getProvider } from '../providers';
 import { validateRequest } from '../validate';
 import { saveReading } from '../store';
@@ -35,23 +36,17 @@ export async function handleReading(request: Request, env: Env, ctx: ExecutionCo
     return Response.json({ error: 'The reading service is not configured yet.' }, { status: 503 });
   }
 
-  // Anonymous usage event, forwarded server-side (no names, ages or photos).
-  if (env.USAGE_WEBHOOK_URL) {
-    waitUntil(
-      fetch(env.USAGE_WEBHOOK_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          tab: 'Usage',
-          timestamp: new Date().toISOString(),
-          mode: body.mode,
-          focus: body.focus,
-          includeFamily: body.includeFamily,
-          photoCount: body.photos.length,
-          provider: provider.name,
-        }),
-      }).catch(() => {}),
-    );
-  }
+  // Anonymous usage event, logged to the Google Sheet (no names, ages or photos).
+  waitUntil(
+    sendToGoogle(env, 'usage', {
+      mode: body.mode,
+      focus: body.focus,
+      includeFamily: body.includeFamily,
+      curious: body.curious ?? '',
+      photoCount: body.photos.length,
+      provider: provider.name,
+    }).catch((e) => console.error('Usage log failed:', e)),
+  );
 
   // Newline-delimited JSON stream: progress events keep the connection alive
   // during the two model calls and let the UI show each stage.

@@ -24,10 +24,12 @@
   "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "palmreadings-photos" }],
   // Daily photo retention job (see expireOldPhotos in server/store.ts).
   "triggers": { "crons": ["17 4 * * *"] },
-  // Non-secret settings. Secrets (API keys) go in .dev.vars locally and
-  // `wrangler secret put NAME` (or the dashboard) in production.
+  // Production settings (local development overrides these with .dev.vars, which can use the mock
+  // provider). Secrets (API keys) go in .dev.vars locally and `wrangler secret put NAME` in production.
   "vars": {
-    "AI_PROVIDER": "mock"
+    "AI_PROVIDER": "openai",
+    "OBSERVE_MODEL": "gpt-5.6-sol",
+    "INTERPRET_MODEL": "gpt-5.6-sol"
   }
   // After the DNS moves to Cloudflare, add:
   // "routes": [

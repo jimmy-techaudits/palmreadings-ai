@@ -3,8 +3,9 @@
 # Which model provider to use: mock | anthropic | openai | gemini
 AI_PROVIDER=mock
 
-# Model overrides (optional for anthropic; required for openai and gemini).
-# OBSERVE_MODEL reads the photos; INTERPRET_MODEL writes the reading.
+# Models. OBSERVE_MODEL reads the photos; INTERPRET_MODEL writes the reading. wrangler.jsonc sets both to
+# OpenAI's gpt-5.6-sol for production, and those apply here too unless you set them: when you use
+# anthropic or gemini locally, set both to a model of that provider.
 # OBSERVE_MODEL=
 # INTERPRET_MODEL=
 
@@ -16,17 +17,10 @@ ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 GEMINI_API_KEY=
 
-# Optional: server-side forwarding of feedback / anonymous usage events
-# (e.g. the existing Google Apps Script web app URLs). Kept off the client.
-# FEEDBACK_WEBHOOK_URL=
-# USAGE_WEBHOOK_URL=
-
-# Contact form delivery (pick one). Resend sends a real email; the webhook can be
-# a Google Apps Script that emails you from Google Workspace.
-# RESEND_API_KEY=
-# CONTACT_TO_EMAIL=hello@palmreadings.ai
-# CONTACT_FROM_EMAIL=Palm Readings AI <website@palmreadings.ai>
-# CONTACT_WEBHOOK_URL=
+# Google Workspace (contact form email + feedback/usage log). See "Contact form and Google Workspace"
+# in the README. Leave unset locally to just print contact messages in the terminal.
+# GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/.../exec
+# GOOGLE_SCRIPT_SECRET=the same long random string as the script's SECRET property
 
 # Bot protection (Cloudflare Turnstile). Leave unset to skip the check locally.
 # Cloudflare's always-pass test secret, to try the full flow:
