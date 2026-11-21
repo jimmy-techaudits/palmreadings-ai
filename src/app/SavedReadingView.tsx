@@ -31,7 +31,7 @@ export default function SavedReadingView() {
 
   if (state === 'loading') {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center text-violet-200">
+      <div className="flex min-h-[60vh] items-center justify-center text-ink-soft">
         <Loader2 className="mr-2 animate-spin" /> Loading your reading…
       </div>
     );
@@ -44,8 +44,8 @@ export default function SavedReadingView() {
     }[state as 'missing' | 'error' | 'deleted'];
     return (
       <section className="mx-auto flex max-w-md flex-col items-center py-20 text-center">
-        <h1 className="font-display text-3xl text-white">{msg[0]}</h1>
-        <p className="mt-3 text-violet-200/80">{msg[1]}</p>
+        <h1 className="font-display text-3xl font-medium text-white">{msg[0]}</h1>
+        <p className="mt-3 text-ink-muted">{msg[1]}</p>
         <Button className="mt-8" onClick={startNew}>Start a new reading</Button>
       </section>
     );
@@ -54,7 +54,7 @@ export default function SavedReadingView() {
   const photos: ResultPhoto[] = data.photosDeletedAt ? [] : data.photoSlots.map((slot) => ({ slot, url: photoUrl(id, slot), label: photoLabel(slot, data) }));
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:max-w-6xl">
+    <div className="w-full">
       <Results
         saved={{
           mode: data.mode,

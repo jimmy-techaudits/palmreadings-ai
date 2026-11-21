@@ -172,12 +172,12 @@ export function HandDiagram({ hand, highlight, mini = false, className = '', tit
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className={className}>
       <defs>
         <linearGradient id={`skin-${id}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={H}>
-          <stop offset="0" stopColor="#2b2056" />
-          <stop offset="1" stopColor="#150f30" />
+          <stop offset="0" stopColor="#2a1f5c" />
+          <stop offset="1" stopColor="#1c1545" />
         </linearGradient>
         <linearGradient id={`fade-${id}`} gradientUnits="userSpaceOnUse" x1="0" y1={B - 10} x2="0" y2={H}>
-          <stop offset="0" stopColor="#040713" stopOpacity="0" />
-          <stop offset="1" stopColor="#040713" stopOpacity="1" />
+          <stop offset="0" stopColor="#0e0b22" stopOpacity="0" />
+          <stop offset="1" stopColor="#0e0b22" stopOpacity="1" />
         </linearGradient>
       </defs>
       <g transform={hand.hand === 'right' ? `translate(${W},0) scale(-1,1)` : undefined}>

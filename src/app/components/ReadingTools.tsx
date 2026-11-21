@@ -23,11 +23,11 @@ export function FeedbackBox({ mode, focus, readingId }: { mode: string; focus: s
   }
 
   if (state === 'sent') {
-    return <p className="panel mx-auto mt-12 max-w-lg p-6 text-center text-violet-100 print:hidden">Thank you! Your feedback helps us improve.</p>;
+    return <p className="panel mx-auto mt-12 max-w-lg p-6 text-center text-ink-soft print:hidden">Thank you! Your feedback helps us improve.</p>;
   }
   return (
-    <div className="panel mx-auto mt-12 max-w-lg p-6 text-center print:hidden">
-      <h2 className="font-display text-lg text-white">Did this reading resonate?</h2>
+    <div className="panel mx-auto mt-12 max-w-lg p-6 text-center sm:p-8 print:hidden">
+      <h2 className="font-display text-2xl font-medium text-white">Did this reading <em className="accent">resonate?</em></h2>
       <div className="mt-4 flex justify-center gap-3">
         {([
           [1, ThumbsUp, 'Spot on'],
@@ -37,8 +37,8 @@ export function FeedbackBox({ mode, focus, readingId }: { mode: string; focus: s
             key={v}
             onClick={() => setRating(v)}
             aria-pressed={rating === v}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-semibold transition ${
-              rating === v ? 'border-gold-400 bg-gold-400/15 text-white' : 'border-white/10 text-violet-200 hover:border-white/30'
+            className={`flex min-h-11 items-center gap-2 rounded-full border px-5 py-2.5 font-medium transition ${
+              rating === v ? 'border-gold-400 bg-gold-400/15 text-white' : 'border-lavender-300/25 text-ink-soft hover:border-lavender-300/50'
             }`}
           >
             <Icon size={18} /> {label}
@@ -52,7 +52,7 @@ export function FeedbackBox({ mode, focus, readingId }: { mode: string; focus: s
             onChange={(e) => setComment(e.target.value)}
             maxLength={2000}
             placeholder="What resonated, or what felt off? (optional)"
-            className="min-h-24 w-full rounded-xl border border-white/10 bg-night-900/70 p-3 text-sm text-white placeholder:text-violet-300/40 focus:border-gold-400 focus:outline-none"
+            className="min-h-24 w-full rounded-input border border-lavender-300/16 bg-[rgba(6,6,15,0.6)] p-3.5 text-base text-white placeholder:text-ink-faint focus:border-gold-400"
           />
           <Button onClick={submit} disabled={state === 'sending'} className="w-full">
             {state === 'sending' ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} Send feedback
@@ -76,17 +76,21 @@ export function PrivateLink() {
     }
   }
   return (
-    <section className="panel mb-8 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between print:hidden">
-      <div className="flex items-start gap-3">
-        <Link2 size={20} className="mt-0.5 shrink-0 text-gold-400" />
-        <div>
-          <p className="font-bold text-white">This is your private link</p>
-          <p className="text-sm text-violet-200/80">Bookmark it to come back anytime. Anyone with the link can see this reading and its photos.</p>
-        </div>
+    <section className="flex flex-wrap items-center gap-4 rounded-[22px] border border-gold-400/28 bg-[linear-gradient(135deg,rgba(40,22,84,0.65),rgba(14,10,34,0.65))] px-6 py-5 print:hidden">
+      <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gold-400/12 text-gold-400">
+        <Link2 size={20} />
+      </span>
+      <div className="min-w-0 flex-[1_1_280px]">
+        <p className="font-medium text-white">This is your private link</p>
+        <p className="mt-0.5 text-sm text-ink-muted">Bookmark it to come back anytime. Anyone with the link can see this reading and its photos.</p>
       </div>
-      <Button variant="secondary" onClick={copy} className="shrink-0">
-        {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? 'Copied' : 'Copy link'}
-      </Button>
+      <button
+        type="button"
+        onClick={copy}
+        className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full border border-gold-400/50 bg-gold-400/10 px-[22px] py-2.5 text-base font-medium text-gold-300 transition hover:bg-gold-400/20"
+      >
+        {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? 'Link copied' : 'Copy link'}
+      </button>
     </section>
   );
 }
@@ -94,14 +98,14 @@ export function PrivateLink() {
 export function PhotoStrip({ photos }: { photos: ResultPhoto[] }) {
   return (
     <section className="mb-5">
-      <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">Photos used for this reading</p>
+      <p className="eyebrow mb-3 print-muted">Photos used for this reading</p>
       <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
         {photos.map((p) => (
           <li key={p.slot}>
-            <a href={p.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 hover:border-gold-400/60">
+            <a href={p.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-card-sm border border-lavender-300/16 hover:border-gold-400/60">
               <img src={p.url} alt={p.label} loading="lazy" className="aspect-[4/5] w-full object-cover" />
             </a>
-            <span className="mt-1 block text-center text-xs text-violet-300/80 print-muted">{p.label}</span>
+            <span className="mt-1.5 block text-center text-xs text-ink-subtle print-muted">{p.label}</span>
           </li>
         ))}
       </ul>
@@ -122,17 +126,17 @@ export function DeleteBox({ onDelete }: { onDelete: () => Promise<void> }) {
   return (
     <div className="mx-auto mt-8 max-w-lg text-center print:hidden">
       {state === 'idle' ? (
-        <button onClick={() => setState('confirm')} className="inline-flex items-center gap-2 text-sm text-violet-300/70 underline hover:text-red-300">
+        <button onClick={() => setState('confirm')} className="inline-flex min-h-11 items-center gap-2 text-sm text-ink-subtle underline underline-offset-4 hover:text-[#f7a9bf]">
           <Trash2 size={15} /> Delete this reading and its photos
         </button>
       ) : (
-        <div className="panel border-red-400/30 p-5">
-          <p className="font-bold text-white">Delete this reading permanently?</p>
-          <p className="mt-1 text-sm text-violet-200/80">Your reading and photos will be erased and this link will stop working. This can’t be undone.</p>
-          {state === 'error' && <p className="mt-2 text-sm text-red-300">Something went wrong. Please try again.</p>}
+        <div className="rounded-card border border-[#f28ba8]/35 bg-[#f28ba8]/[0.06] p-6">
+          <p className="font-medium text-white">Delete this reading permanently?</p>
+          <p className="mt-1 text-sm text-ink-muted">Your reading and photos will be erased and this link will stop working. This can’t be undone.</p>
+          {state === 'error' && <p className="mt-2 text-sm text-[#f7a9bf]">Something went wrong. Please try again.</p>}
           <div className="mt-4 flex justify-center gap-3">
             <Button variant="secondary" onClick={() => setState('idle')} disabled={state === 'deleting'}>Keep it</Button>
-            <Button onClick={run} disabled={state === 'deleting'} className="!bg-red-500 !text-white hover:!bg-red-400">
+            <Button onClick={run} disabled={state === 'deleting'} className="!bg-none !bg-[#e0577d] !text-white !shadow-none">
               {state === 'deleting' ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />} Delete
             </Button>
           </div>
@@ -157,12 +161,12 @@ export function MarketingToggle({ value, onChange }: { value: boolean; onChange:
     }
   }
   return (
-    <label className="mb-8 flex cursor-pointer items-start gap-3 text-sm text-violet-200/90 print:hidden">
+    <label className="mb-8 flex cursor-pointer items-start gap-3 text-base text-ink-soft print:hidden">
       <input type="checkbox" className="mt-0.5 size-5 accent-gold-400" checked={checked} disabled={state === 'saving'} onChange={(e) => toggle(e.target.checked)} />
       <span>
         Palm Readings AI may use these palm photos in its marketing (never with your name).
         {state === 'saved' && <span className="ml-2 font-bold text-gold-400">Saved</span>}
-        {state === 'error' && <span className="ml-2 font-bold text-red-300">Couldn’t save, please try again</span>}
+        {state === 'error' && <span className="ml-2 font-bold text-[#f7a9bf]">Couldn’t save, please try again</span>}
       </span>
     </label>
   );

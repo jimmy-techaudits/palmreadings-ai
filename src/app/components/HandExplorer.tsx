@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, Hand as HandIcon } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { LINE_KEYS, type Hand, type HandNote, type HandObservation, type LineKey, type PersonObservation, type Seen } from '../../../shared/types';
 import { HandDiagram } from './HandDiagram';
 import { LINE_COLORS, LINE_MEANINGS, LINE_NAMES, lineWords } from './observationText';
 import type { ResultPhoto } from './ReadingTools';
-import { cap, Dot, SeenLabel } from './readingUi';
+import { CARD, cap, Chip, SEEN_COLORS, SEEN_LABELS } from './readingUi';
 
 interface Props {
   mode: string;
@@ -17,10 +17,51 @@ interface Props {
 
 /** In our method: non-dominant = natural tendencies, dominant = developed path. */
 function roleOf(hand: Hand, dominant?: Hand) {
-  if (!dominant) return { title: `${cap(hand)} hand`, sub: '' };
-  return hand === dominant
-    ? { title: `${cap(hand)} hand`, sub: 'Your developed path' }
-    : { title: `${cap(hand)} hand`, sub: 'Your natural tendencies' };
+  if (!dominant) return '';
+  return hand === dominant ? 'developed path' : 'natural tendencies';
+}
+
+function Segmented({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string; sub?: string }[];
+  onChange: (v: string) => void;
+}) {
+  if (options.length < 2) return null;
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="grid w-full grid-cols-2 rounded-[22px] border border-lavender-300/20 bg-night-950/60 p-[5px] sm:inline-flex sm:w-auto sm:rounded-full print:hidden"
+    >
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(o.value)}
+            className={`min-h-11 rounded-[18px] px-3 py-2 text-base leading-tight transition sm:rounded-full sm:px-[22px] ${on ? 'bg-gold-400 font-medium text-plum-900' : 'text-[#c8bee8] hover:text-white'}`}
+          >
+            {o.label}
+            {o.sub && (
+              <>
+                <span className="hidden sm:inline"> · {o.sub}</span>
+                <span className="block text-xs sm:hidden">{o.sub}</span>
+              </>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 /**
@@ -45,95 +86,79 @@ export function HandExplorer({ mode, observations, dominantHands, personName, no
 
   const shape = [
     hand.element !== 'unclear' ? `${cap(hand.element)} hand` : '',
-    hand.palm_shape !== 'unclear' ? `${hand.palm_shape} palm` : '',
-    hand.finger_length !== 'unclear' ? `${hand.finger_length} fingers` : '',
-    hand.index_vs_ring === 'index_longer' ? 'index finger longer than ring' : hand.index_vs_ring === 'ring_longer' ? 'ring finger longer than index' : '',
+    hand.palm_shape !== 'unclear' ? `${cap(hand.palm_shape)} palm` : '',
+    hand.finger_length !== 'unclear' ? `${cap(hand.finger_length)} fingers` : '',
+    hand.index_vs_ring === 'index_longer' ? 'Index longer than ring' : hand.index_vs_ring === 'ring_longer' ? 'Ring longer than index' : '',
   ].filter(Boolean);
 
   return (
-    <section id="s-hands" className="panel mb-5 scroll-mt-6 overflow-hidden" aria-labelledby="hands-title">
-      <div className="px-5 pt-5 sm:px-8 sm:pt-7">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">What we saw</p>
-        <h2 id="hands-title" className="font-display text-2xl text-white print-dark">Explore your hands</h2>
-        <p className="mt-1 text-sm text-violet-200/80 print-dark">
-          Your reading combines both hands. In our method, your non-dominant hand shows natural tendencies and your dominant hand shows how you’ve
-          developed them.
-        </p>
+    <section id="s-hands" className={CARD} aria-labelledby="hands-title">
+      <p className="eyebrow print-muted">What we saw</p>
+      <h2 id="hands-title" className="mt-2 font-display text-[30px] font-medium leading-tight text-white print-dark">Explore your hands</h2>
+      <p className="mt-2 text-base text-ink-muted print-dark">
+        Your reading combines both hands. In our method, your non-dominant hand shows natural tendencies and your dominant hand shows how you’ve developed
+        them.
+      </p>
 
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         {mode === 'couple' && (
-          <div role="radiogroup" aria-label="Person" className="mt-4 inline-flex rounded-xl border border-white/10 bg-night-900/60 p-1 print:hidden">
-            {observations.map((_, i) => (
-              <button
-                key={i}
-                role="radio"
-                aria-checked={person === i}
-                onClick={() => {
-                  setPerson(i);
-                  setSide(dominantHands?.[i] ?? 'right');
-                }}
-                className={`rounded-lg px-3 py-1.5 text-sm font-bold transition ${person === i ? 'bg-gold-400 text-night-900' : 'text-violet-200 hover:text-white'}`}
-              >
-                {personName(i)}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            label="Person"
+            value={String(person)}
+            options={observations.map((_, i) => ({ value: String(i), label: personName(i) }))}
+            onChange={(v) => {
+              setPerson(Number(v));
+              setSide(dominantHands?.[Number(v)] ?? 'right');
+            }}
+          />
         )}
-
-        <div role="radiogroup" aria-label="Hand" className="mt-4 grid grid-cols-2 gap-3 print:hidden">
-          {ordered.map((h) => {
-            const role = roleOf(h.hand, dominant);
-            const on = h.hand === hand.hand;
-            return (
-              <button
-                key={h.hand}
-                role="radio"
-                aria-checked={on}
-                onClick={() => setSide(h.hand)}
-                className={`flex flex-col items-center rounded-2xl border px-3 py-3 text-center transition ${
-                  on ? 'border-gold-400 bg-gold-400/10' : 'border-white/10 hover:border-white/30'
-                }`}
-              >
-                <HandIcon size={18} className={`${h.hand === 'left' ? '-scale-x-100' : ''} ${on ? 'text-gold-400' : 'text-violet-300'}`} />
-                <span className="mt-1 font-bold text-white">{role.title}</span>
-                {role.sub && <span className="text-xs text-violet-300/80">{role.sub}</span>}
-              </button>
-            );
-          })}
-        </div>
+        <Segmented
+          label="Hand"
+          value={hand.hand}
+          options={ordered.map((h) => ({ value: h.hand, label: cap(h.hand), sub: roleOf(h.hand, dominant) || undefined }))}
+          onChange={(v) => setSide(v as Hand)}
+        />
       </div>
 
-      <div className="grid gap-5 p-5 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] sm:p-8">
-        <div>
-          <div className={`grid gap-3 ${photo ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      <div className="mt-7 flex flex-wrap gap-7">
+        <div className="min-w-0 flex-[1_1_320px]">
+          <div className={`grid gap-3 ${photo ? 'grid-cols-2' : 'mx-auto max-w-[16rem] grid-cols-1'}`}>
             {photo && (
               <figure>
-                <a href={photo.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-night-900">
-                  <img src={photo.url} alt={`Your ${hand.hand} palm`} className="aspect-[22/29] w-full object-cover" />
+                <a href={photo.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-[20px] border border-lavender-300/18 bg-[#0e0b22]">
+                  <img src={photo.url} alt={`Your ${hand.hand} palm`} className="aspect-[3/4] w-full object-cover" />
                 </a>
-                <figcaption className="mt-1.5 text-center text-xs text-violet-300/70">Your photo</figcaption>
+                <figcaption className="mt-2 text-center text-xs text-ink-subtle">Your photo</figcaption>
               </figure>
             )}
-            <figure className={photo ? '' : 'mx-auto w-full max-w-[15rem]'}>
-              <div className="rounded-xl bg-night-950/60">
-                <HandDiagram hand={hand} highlight={active ? [active] : undefined} className="w-full" />
+            <figure>
+              <div className="aspect-[3/4] rounded-[20px] border border-lavender-300/18 bg-[radial-gradient(circle_at_50%_45%,rgba(124,58,237,0.3),#0e0b22_70%)] p-2.5">
+                <HandDiagram hand={hand} highlight={active ? [active] : undefined} className="h-full w-full" />
               </div>
-              <figcaption className="mt-1.5 text-center text-xs text-violet-300/70">The lines we read</figcaption>
+              <figcaption className="mt-2 text-center text-xs text-ink-subtle">The lines we read</figcaption>
             </figure>
           </div>
-          {shape.length > 0 && <p className="mt-3 text-center text-sm text-violet-300/80 print-muted">{shape.join(' · ')}</p>}
-          {note && (
-            <p className="mt-4 rounded-xl bg-white/[0.04] p-4 font-read leading-relaxed text-violet-100 print-dark">{note.summary}</p>
+          {shape.length > 0 && (
+            <p className="mt-4 flex flex-wrap gap-2">
+              {shape.map((s) => (
+                <Chip key={s} filled>
+                  {s}
+                </Chip>
+              ))}
+            </p>
           )}
+          {note && <p className="mt-4 rounded-card-sm bg-[rgba(30,20,66,0.6)] px-5 py-[18px] text-base leading-relaxed text-ink-soft print-dark">{note.summary}</p>}
         </div>
 
-        <div>
-          <ul className="space-y-1.5">
+        <div className="min-w-0 flex-[1_1_300px]">
+          <ul className="flex flex-col gap-2.5">
             {LINE_KEYS.map((k) => {
               const l = hand.lines[k];
               const words = lineWords(l);
               const visible = words.length > 0;
               const seen: Seen = l.visibility === 'not_visible' ? 'not_assessable' : l.visibility;
               const on = active === k;
+              const color = visible ? LINE_COLORS[k] : '#5c5480';
               return (
                 <li key={k}>
                   <button
@@ -141,29 +166,28 @@ export function HandExplorer({ mode, observations, dominantHands, personName, no
                     disabled={!visible}
                     onClick={() => setActive(on ? null : k)}
                     aria-pressed={on}
-                    className={`flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left transition ${
-                      on ? 'bg-white/10' : visible ? 'hover:bg-white/5' : 'cursor-default opacity-55'
-                    }`}
+                    className={`flex w-full gap-3.5 rounded-2xl border px-4 py-3.5 text-left transition ${
+                      on ? 'border-gold-400/60 bg-gold-400/[0.08]' : 'border-lavender-300/12 bg-[rgba(20,16,44,0.6)] hover:border-lavender-300/30'
+                    } ${visible ? '' : 'cursor-default opacity-70'}`}
                   >
-                    <Dot color={visible ? LINE_COLORS[k] : 'rgb(255 255 255 / 0.25)'} className="mt-1.5 size-2.5" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-white print-dark">
-                        {LINE_NAMES[k]} <span className="font-normal text-violet-300/70">· {LINE_MEANINGS[k]}</span>
+                    <span aria-hidden className="mt-[7px] size-3 shrink-0 rounded-full" style={{ background: color, boxShadow: visible ? `0 0 10px ${color}` : undefined }} />
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-base">
+                        <strong className="font-medium text-white print-dark">{LINE_NAMES[k]}</strong> <span className="text-ink-subtle">· {LINE_MEANINGS[k]}</span>
                       </span>
-                      {visible && (
-                        <span className="block text-sm text-violet-200/90 print-muted">
-                          {words.join(' · ')}
-                          {l.features.length > 0 && <span className="text-violet-300/70"> · {l.features.join(', ')}</span>}
-                        </span>
-                      )}
-                      <SeenLabel seen={seen} className="mt-0.5" />
+                      <span className="text-sm text-ink-soft print-muted">
+                        {visible ? [...words, ...l.features].join(' · ') : 'Not assessed'}
+                      </span>
+                      <span className="text-xs" style={{ color: SEEN_COLORS[seen] }}>
+                        ● {SEEN_LABELS[seen]}
+                      </span>
                     </span>
                   </button>
                 </li>
               );
             })}
           </ul>
-          <p className="mt-3 px-3 text-xs leading-relaxed text-violet-300/60 print:hidden">
+          <p className="mt-3 text-xs leading-relaxed text-ink-faint print:hidden">
             Tap a line to find it on the diagram. The diagram is drawn from what we observed, not traced from your photo.
           </p>
         </div>
@@ -188,12 +212,12 @@ function HandDetails({ hand }: { hand: HandObservation }) {
   ].filter(Boolean) as string[];
   if (items.length === 0) return null;
   return (
-    <div className="border-t border-white/5 print:hidden">
-      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between px-5 py-3.5 text-left text-sm font-bold text-violet-200 sm:px-8">
+    <div className="mt-6 border-t border-lavender-300/12 print:hidden">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex min-h-11 w-full items-center justify-between pt-4 text-left text-base font-medium text-ink-soft hover:text-white">
         More about this hand <ChevronDown size={18} className={`transition ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <ul className="space-y-1.5 px-5 pb-5 text-sm text-violet-100 sm:px-8">
+        <ul className="mt-2 space-y-1.5 text-base text-ink-soft">
           {items.map((t) => (
             <li key={t}>{t}</li>
           ))}

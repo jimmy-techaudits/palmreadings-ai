@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import {
-  Baby, Brain, Briefcase, ChevronDown, Compass, Flame, FlaskConical, Gem, Heart, HeartHandshake, MessageCircle, Milestone, Printer,
-  RotateCcw, Sparkles, Sprout, Target, TrendingUp, Users, Wallet, type LucideIcon,
-} from 'lucide-react';
+import { ArrowRight, ChevronDown, FlaskConical, Printer, RotateCcw } from 'lucide-react';
 import type { Curious, FamilyPrediction, GlanceItem, Hand, HandObservation, LineKey, Reading, ReadingSection, Seen } from '../../../shared/types';
 import { FOCUS_LABELS } from '../../../shared/plan';
 import type { SavedReading } from '../lib/storage';
@@ -10,18 +7,10 @@ import { HandDiagram } from './HandDiagram';
 import { HandExplorer } from './HandExplorer';
 import { LINE_COLORS, LINE_NAMES } from './observationText';
 import { DeleteBox, FeedbackBox, MarketingToggle, PhotoStrip, PrivateLink, type ResultPhoto } from './ReadingTools';
-import { Dot, Prose, SeenLabel } from './readingUi';
+import { CARD, Chip, Dot, Prose, SEEN_COLORS, SEEN_LABELS } from './readingUi';
 import { Button } from './ui';
 
 export type { ResultPhoto } from './ReadingTools';
-
-const ICONS: Record<string, LucideIcon> = {
-  personality: Sparkles, potential_vs_path: Sprout, love: Heart, marriage_family: HeartHandshake, career: Briefcase, money: Wallet,
-  energy: Flame, turning_points: Milestone,
-  love_style: Heart, needs: HeartHandshake, patterns: Brain, timeline: Milestone, next_chapter: Compass,
-  work_style: Briefcase, drive: Target, strengths: Gem, blockers: Brain, career_timeline: TrendingUp,
-  person_a: Users, person_b: Users, dynamic: HeartHandshake, communication: MessageCircle, long_term: Compass,
-};
 
 /** Which section answers each "most curious about" topic, in order of preference. */
 const CURIOUS_SECTIONS: Record<Curious, string[]> = {
@@ -31,6 +20,10 @@ const CURIOUS_SECTIONS: Record<Curious, string[]> = {
   money: ['money'],
   life_changes: [],
 };
+
+const DISCLAIMER =
+  'These answers are traditional palmistry interpretations of the lines in your photos. They describe tendencies and possibilities, not facts or guarantees about your future.';
+
 interface ResultsProps {
   saved: SavedReading;
   onReset: () => void;
@@ -45,7 +38,7 @@ interface ResultsProps {
 
 export function Results({ saved, onReset, readingId, photos, photosRemoved, marketingConsent, onDelete }: ResultsProps) {
   const { reading, observations, mode, focus, names, dominantHands } = saved;
-  const title = mode === 'couple' ? `${names[0] || 'Partner A'} & ${names[1] || 'Partner B'}` : names[0] ? `${names[0]}’s Reading` : 'Your Reading';
+  const who = mode === 'couple' ? `${names[0] || 'Partner A'} & ${names[1] || 'Partner B'}` : names[0] ? `${names[0]}’s reading` : 'Your reading';
   const personName = (i: number) => names[i] || (i === 0 ? 'Partner A' : 'Partner B');
 
   /** A person's dominant hand: the hand the small diagrams show. */
@@ -60,72 +53,43 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
   const compare = reading.sections.find((s) => s.id === 'potential_vs_path');
   const sections = useMemo(() => {
     const rest = reading.sections.filter((s) => s.id !== 'potential_vs_path');
-    const first = rest.filter((s) => s.id === curiousId);
-    return [...first, ...rest.filter((s) => s.id !== curiousId)];
+    return [...rest.filter((s) => s.id === curiousId), ...rest.filter((s) => s.id !== curiousId)];
   }, [reading, curiousId]);
   const familyInSection = reading.sections.some((s) => s.id === 'marriage_family');
   const timelineFirst = reading.curious === 'life_changes';
+  const careerId = ['career', 'strengths', 'work_style'].find((id) => reading.sections.some((x) => x.id === id));
 
   const navItems = useMemo<NavItem[]>(() => {
-    const timeline = reading.timeline?.length ? [{ id: 's-timeline', label: 'Life timeline' }] : [];
+    const timeline = reading.timeline?.length ? [{ id: 's-timeline', label: 'Life timeline', color: LINE_COLORS.life }] : [];
     return [
-      { id: 's-glance', label: reading.glance ? 'Life at a glance' : 'At a glance' },
+      { id: 's-glance', label: reading.glance ? 'Life at a glance' : 'At a glance', color: '#f6c77f' },
       ...(timelineFirst ? timeline : []),
-      { id: 's-hands', label: 'Your hands' },
-      ...(compare ? [{ id: `s-${compare.id}`, label: compare.title, color: lineColor(compare.lines), lines: compare.lines }] : []),
+      { id: 's-hands', label: 'Your hands', color: '#c9b8f0' },
+      ...(compare ? [{ id: `s-${compare.id}`, label: compare.title, color: lineColor(compare.lines) }] : []),
       ...(timelineFirst ? [] : timeline),
-      ...sections.map((s) => ({ id: `s-${s.id}`, label: s.title, color: lineColor(s.lines), lines: s.lines })),
-      ...(reading.family && !familyInSection ? [{ id: 's-family', label: 'Marriage & Family' }] : []),
-      { id: 's-reflection', label: 'Reflection' },
+      ...sections.map((s) => ({ id: `s-${s.id}`, label: s.title, color: lineColor(s.lines) })),
+      ...(reading.family && !familyInSection ? [{ id: 's-family', label: 'Marriage & Family', color: LINE_COLORS.heart }] : []),
+      { id: 's-reflection', label: 'Reflection', color: '#c9b8f0' },
     ];
   }, [reading, sections, compare, familyInSection, timelineFirst]);
   const active = useActiveSection(navItems);
-  const activeLines = navItems.find((n) => n.id === active)?.lines;
 
   const timeline = reading.timeline?.length ? <LifeTimeline entries={reading.timeline} /> : null;
 
   return (
-    <article className="mx-auto max-w-3xl lg:max-w-none">
-      {reading.sample && (
-        <div role="note" className="mx-auto mb-8 flex max-w-3xl items-start gap-3 rounded-2xl border-2 border-amber-400/70 bg-amber-950/60 p-4 text-amber-50">
-          <FlaskConical size={22} className="mt-0.5 shrink-0 text-amber-300" />
-          <div className="text-sm leading-relaxed">
-            <p className="font-bold text-white">Sample reading: your photos were not analyzed</p>
-            <p>
-              The site is running in test mode (<code className="rounded bg-black/30 px-1">AI_PROVIDER=mock</code>), so every reading shows the same
-              sample text, whatever photos are uploaded. Set <code className="rounded bg-black/30 px-1">AI_PROVIDER</code> to openai, anthropic or
-              gemini to get a real reading.
-            </p>
-          </div>
-        </div>
-      )}
-      <header className="mx-auto mb-8 max-w-3xl text-center">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">
-          {mode === 'couple' ? 'Couples Compatibility' : FOCUS_LABELS[focus]} · {title}
-        </p>
-        <h1 className="font-display text-3xl leading-tight text-white sm:text-5xl print-dark">{reading.headline}</h1>
-        <p className="mx-auto mt-5 max-w-2xl font-read text-[1.05rem] leading-relaxed text-violet-100 sm:text-lg print-dark">{reading.summary}</p>
-      </header>
+    <article>
+      <ReadingHero eyebrow={`${mode === 'couple' ? 'Couples Compatibility' : FOCUS_LABELS[focus]} · ${who}`} headline={reading.headline} summary={reading.summary} />
 
-      <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-10 print:!block">
-        <aside className="hidden lg:block print:hidden" aria-label="Reading navigation">
-          <div className="sticky top-6">
-            {mainHand(0) && (
-              <div className="mb-4 flex items-center gap-3 px-3">
-                <HandDiagram hand={mainHand(0)!} highlight={activeLines?.length ? activeLines : undefined} mini className="w-12 shrink-0" />
-                <p className="text-xs leading-snug text-violet-300/70">Lines used in the section you’re reading light up here.</p>
-              </div>
-            )}
-            <SideNav items={navItems} active={active} />
-          </div>
-        </aside>
+      <div className="mx-auto flex max-w-[1240px] flex-wrap items-start gap-10 px-4 pb-24 pt-6 sm:px-8 print:block">
+        <SideNav items={navItems} active={active} />
 
-        <div className="min-w-0">
-          {readingId && <PrivateLink />}
+        <div className="min-w-0 flex-[999_1_560px]">
+          <div className="flex flex-col gap-7">
+            {reading.sample && <SampleBanner />}
+            {readingId && <PrivateLink />}
 
-          <div>
             {reading.glance ? (
-              <LifeAtAGlance glance={reading.glance} family={reading.family} curious={reading.curious} sectionIds={reading.sections.map((s) => s.id)} />
+              <LifeAtAGlance glance={reading.glance} family={reading.family} curious={reading.curious} sectionIds={reading.sections.map((s) => s.id)} careerId={careerId} />
             ) : (
               <>
                 {reading.traits && <AtAGlance traits={reading.traits} />}
@@ -135,59 +99,52 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
 
             {timelineFirst && timeline}
 
-            <HandExplorer
-              mode={mode}
-              observations={observations}
-              dominantHands={dominantHands}
-              personName={personName}
-              notes={reading.hand_notes}
-              photos={photos}
-            />
+            <HandExplorer mode={mode} observations={observations} dominantHands={dominantHands} personName={personName} notes={reading.hand_notes} photos={photos} />
 
-            <div className="space-y-5">
-              {compare && <SectionCard section={compare} hands={bothHands(0)} />}
+            {compare && <SectionCard section={compare} hands={bothHands(0)} compare />}
 
-              {!timelineFirst && timeline}
+            {!timelineFirst && timeline}
 
-              {sections.map((s) => {
-                const hand = mainHand(s.id === 'person_b' ? 1 : 0);
-                const isCareer = s.id === (['career', 'strengths', 'work_style'].find((id) => reading.sections.some((x) => x.id === id)) ?? '');
-                return (
-                  <SectionCard
-                    key={s.id}
-                    section={s}
-                    hands={hand ? [hand] : []}
-                    asked={s.id === curiousId}
-                    careerPaths={isCareer ? reading.career_paths : undefined}
-                    family={s.id === 'marriage_family' ? reading.family : undefined}
-                  />
-                );
-              })}
+            {sections.map((s) => {
+              const hand = mainHand(s.id === 'person_b' ? 1 : 0);
+              return (
+                <SectionCard
+                  key={s.id}
+                  section={s}
+                  hands={hand ? [hand] : []}
+                  asked={s.id === curiousId}
+                  careerPaths={s.id === careerId ? reading.career_paths : undefined}
+                  family={s.id === 'marriage_family' ? reading.family : undefined}
+                />
+              );
+            })}
 
-              {reading.family && !familyInSection && (
-                <section id="s-family" className="panel scroll-mt-6 p-6 sm:p-8">
-                  <h2 className="mb-5 flex items-center gap-3 font-display text-xl text-white print-dark">
-                    <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Baby size={20} /></span> Marriage & Family
-                  </h2>
+            {reading.family && !familyInSection && (
+              <section id="s-family" className={CARD}>
+                <p className="eyebrow print-muted">Marriage & family</p>
+                <h2 className="mt-2 font-display text-[30px] font-medium text-white print-dark">What the lines suggest</h2>
+                <div className="mt-6">
                   <FamilyDetails family={reading.family} />
-                </section>
-              )}
-
-              <Reflection steps={reading.action_steps} />
-
-              <section className="rounded-2xl border border-gold-400/30 bg-gradient-to-br from-violet-900/40 to-night-900 p-8 text-center">
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">
-                  {reading.closing.kind === 'mantra' ? 'Your mantra' : 'A question to sit with'}
-                </p>
-                <p className="font-display text-2xl leading-snug text-white print-dark">“{reading.closing.text}”</p>
+                </div>
               </section>
-            </div>
-            <BottomNav items={navItems} active={active} />
-          </div>
+            )}
 
-          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center print:hidden">
-            <Button onClick={() => window.print()}><Printer size={18} /> Save as PDF</Button>
-            <Button variant="secondary" onClick={onReset}><RotateCcw size={18} /> Start a new reading</Button>
+            <Reflection steps={reading.action_steps} />
+
+            <section className="relative overflow-hidden rounded-card-lg border border-gold-400/30 bg-[linear-gradient(135deg,rgba(40,22,84,0.7),rgba(10,8,24,0.9))] px-6 py-10 text-center sm:px-10">
+              <p className="eyebrow print-muted">{reading.closing.kind === 'mantra' ? 'Your mantra' : 'A question to sit with'}</p>
+              <p className="mt-3 font-accent text-[32px] font-medium italic leading-snug text-white sm:text-[38px] print-dark">“{reading.closing.text}”</p>
+            </section>
+          </div>
+          <BottomNav items={navItems} active={active} />
+
+          <div className="mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-center print:hidden">
+            <Button onClick={() => window.print()}>
+              <Printer size={18} /> Save as PDF
+            </Button>
+            <Button variant="secondary" onClick={onReset}>
+              <RotateCcw size={18} /> Start a new reading
+            </Button>
           </div>
 
           <FeedbackBox mode={mode} focus={focus} readingId={readingId} />
@@ -195,7 +152,7 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
           <div className="mt-12">
             {photos && photos.length > 0 && <PhotoStrip photos={photos} />}
             {photosRemoved && (
-              <p className="panel mb-5 p-4 text-sm text-violet-200/80 print:hidden">
+              <p className="panel mb-5 p-4 text-base text-ink-muted print:hidden">
                 The photos for this reading were removed after three years without being opened. Your reading is still here.
               </p>
             )}
@@ -209,12 +166,54 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
   );
 }
 
-const lineColor = (lines?: LineKey[]) => (lines?.[0] ? LINE_COLORS[lines[0]] : undefined);
+const lineColor = (lines?: LineKey[]) => (lines?.[0] ? LINE_COLORS[lines[0]] : '#c9b8f0');
+
+// ---------- Hero ----------
+
+/** Splits the headline so the last words get the italic gold accent, e.g. "A deep feeler with a *strategist's mind*". */
+function splitHeadline(headline: string): [string, string] {
+  const words = headline.trim().split(/\s+/);
+  const n = words.length <= 3 ? 1 : 2;
+  return [words.slice(0, -n).join(' '), words.slice(-n).join(' ')];
+}
+
+function ReadingHero({ eyebrow, headline, summary }: { eyebrow: string; headline: string; summary: string }) {
+  const [lead, accent] = splitHeadline(headline);
+  return (
+    <section className="starfield relative overflow-hidden bg-night-950 print:bg-none">
+      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(55%_90%_at_50%_0%,rgba(110,52,200,0.42),transparent_70%)] print:hidden" />
+      <div className="relative mx-auto max-w-[900px] px-4 pb-16 pt-16 text-center sm:px-8 sm:pb-[72px] sm:pt-[88px]">
+        <div aria-hidden className="relative mx-auto mb-7 size-[120px] print:hidden">
+          <div className="absolute inset-0 rounded-full border border-dashed border-gold-400/45" />
+          <div className="absolute inset-[14px] rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.5),rgba(6,6,15,0)_70%)]" />
+          <img src="/images/palm-readings-ai-icon.png" alt="" className="absolute inset-3 size-24" />
+        </div>
+        <p className="eyebrow print-muted">{eyebrow}</p>
+        <h1 className="mt-4 font-display text-[clamp(36px,4.6vw,60px)] font-medium leading-[1.1] text-white print-dark">
+          {lead} <span className="accent">{accent}</span>
+        </h1>
+        <p className="mx-auto mt-6 max-w-[700px] text-[19px] leading-relaxed text-ink-soft print-dark">{summary}</p>
+      </div>
+    </section>
+  );
+}
+
+function SampleBanner() {
+  return (
+    <div role="note" className="flex items-start gap-3 rounded-[22px] border-2 border-gold-400/70 bg-[rgba(60,36,8,0.55)] p-5 text-ink">
+      <FlaskConical size={22} className="mt-0.5 shrink-0 text-gold-400" />
+      <div className="text-base leading-relaxed">
+        <p className="font-medium text-white">Sample reading: your photos were not analyzed</p>
+        <p className="text-ink-soft">
+          The site is running in test mode (<code className="rounded bg-black/30 px-1">AI_PROVIDER=mock</code>), so every reading shows the same sample text,
+          whatever photos are uploaded. Set <code className="rounded bg-black/30 px-1">AI_PROVIDER</code> to openai, anthropic or gemini to get a real reading.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ---------- Life at a glance ----------
-
-const DISCLAIMER =
-  'These answers are traditional palmistry interpretations of the lines in your photos. They describe tendencies and possibilities, not facts or guarantees about your future.';
 
 function countLabel(range: string, one: string, many: string) {
   return range.trim() === '1' ? one : many;
@@ -223,14 +222,12 @@ function countLabel(range: string, one: string, many: string) {
 interface GlanceCardData {
   key: string;
   topic: Curious | 'life_path';
-  icon: LucideIcon;
   label: string;
-  /** Big number cards (marriages, children) vs. short answer cards. */
-  big?: string;
-  answer: string;
-  detail: string;
+  value: string;
+  /** Marriage and children values are numbers and read larger. */
+  big?: boolean;
+  note: string;
   seen?: Seen;
-  color?: string;
   href?: string;
 }
 
@@ -239,100 +236,98 @@ function LifeAtAGlance({
   family,
   curious,
   sectionIds,
+  careerId,
 }: {
   glance: NonNullable<Reading['glance']>;
   family: Reading['family'];
   curious?: Curious;
   sectionIds: string[];
+  careerId?: string;
 }) {
   const has = (id: string) => sectionIds.includes(id);
   const familyHref = has('marriage_family') ? '#s-marriage_family' : undefined;
-  const careerSection = ['career', 'strengths', 'work_style'].find(has);
 
-  const fromItem = (g: GlanceItem) => ({ answer: g.answer, detail: g.detail, seen: g.visibility, color: g.line !== 'none' ? LINE_COLORS[g.line] : undefined });
-  const fromFamily = (p: FamilyPrediction | undefined, one: string, many: string): Pick<GlanceCardData, 'big' | 'answer' | 'detail' | 'seen'> =>
+  const fromItem = (g: GlanceItem) => ({ value: g.answer, note: g.detail, seen: g.visibility });
+  const fromFamily = (p: FamilyPrediction | undefined, one: string, many: string): Pick<GlanceCardData, 'value' | 'big' | 'note' | 'seen'> =>
     p
       ? p.range.trim() === '?' || p.visibility === 'not_assessable'
-        ? { answer: 'Can’t read from these photos', detail: 'The lines were too fine to see clearly.', seen: 'not_assessable' }
-        : { big: p.range, answer: countLabel(p.range, one, many), detail: `${p.confidence} confidence`, seen: p.visibility }
-      : { answer: 'Not included', detail: 'Needs a photo of the side of your hand. Start a new reading to add it.' };
+        ? { value: 'Can’t read from these photos', note: 'The lines were too fine to see clearly.', seen: 'not_assessable' }
+        : { value: `${p.range} ${countLabel(p.range, one, many).toLowerCase()}`, big: true, note: `${capFirst(p.confidence)} confidence`, seen: p.visibility }
+      : { value: 'Not included', note: 'Needs a photo of the side of your hand. Start a new reading to add it.' };
 
   const cards: GlanceCardData[] = [
-    { key: 'marriage', topic: 'marriage', icon: HeartHandshake, label: 'Marriage', href: familyHref, ...fromFamily(family?.marriages, 'Marriage', 'Marriages') },
-    { key: 'children', topic: 'children', icon: Baby, label: 'Children', href: familyHref, ...fromFamily(family?.children, 'Child', 'Children') },
-    { key: 'career', topic: 'career', icon: Briefcase, label: 'Career', href: careerSection ? `#s-${careerSection}` : undefined, ...fromItem(glance.career) },
-    { key: 'money', topic: 'money', icon: Wallet, label: 'Money', href: has('money') ? '#s-money' : undefined, ...fromItem(glance.money) },
-    { key: 'turning', topic: 'life_changes', icon: Milestone, label: 'Biggest turning point', href: '#s-timeline', ...fromItem(glance.turning_point) },
-    { key: 'path', topic: 'life_path', icon: Compass, label: 'Life path', href: has('potential_vs_path') ? '#s-potential_vs_path' : undefined, ...fromItem(glance.life_path) },
+    { key: 'marriage', topic: 'marriage', label: 'Marriage', href: familyHref, ...fromFamily(family?.marriages, 'Marriage', 'Marriages') },
+    { key: 'children', topic: 'children', label: 'Children', href: familyHref, ...fromFamily(family?.children, 'Child', 'Children') },
+    { key: 'career', topic: 'career', label: 'Career', href: careerId ? `#s-${careerId}` : undefined, ...fromItem(glance.career) },
+    { key: 'money', topic: 'money', label: 'Money', href: has('money') ? '#s-money' : undefined, ...fromItem(glance.money) },
+    { key: 'turning', topic: 'life_changes', label: 'Biggest turning point', href: '#s-timeline', ...fromItem(glance.turning_point) },
+    { key: 'path', topic: 'life_path', label: 'Life path', href: has('potential_vs_path') ? '#s-potential_vs_path' : undefined, ...fromItem(glance.life_path) },
   ];
   const ordered = curious ? [...cards.filter((c) => c.topic === curious), ...cards.filter((c) => c.topic !== curious)] : cards;
 
   return (
-    <section id="s-glance" className="mb-8 scroll-mt-6" aria-labelledby="glance-title">
-      <h2 id="glance-title" className="mb-1 font-display text-2xl text-white print-dark">Your life at a glance</h2>
-      <p className="mb-4 text-sm text-violet-300/80 print-muted">Tap a card to see how we read it.</p>
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <section id="s-glance" className="scroll-mt-6" aria-labelledby="glance-title">
+      <h2 id="glance-title" className="font-display text-[30px] font-medium leading-tight text-white print-dark">
+        Your life at a glance
+      </h2>
+      <p className="mt-1.5 text-base text-ink-subtle print:hidden">Tap a card to see how we read it.</p>
+      <ul className="mt-5 grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))]">
         {ordered.map((c) => {
           const asked = c.topic === curious;
-          const Body = (
+          const body = (
             <>
               <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                <span className="flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-violet-300/90 print-muted">
-                  <c.icon size={14} className="text-gold-400" /> {c.label}
-                </span>
-                {asked && <span className="whitespace-nowrap rounded-full bg-gold-400 px-2 py-0.5 text-[0.65rem] font-bold text-night-900">You asked</span>}
+                <span className="text-xs uppercase tracking-[0.12em] text-gold-400 print-muted">{c.label}</span>
+                {asked && <span className="whitespace-nowrap rounded-full bg-gold-400 px-2.5 py-0.5 text-xs font-medium text-plum-900">You asked</span>}
               </span>
-              {c.big ? (
-                <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-white print-dark">
-                  <span className="whitespace-nowrap font-display text-4xl leading-none sm:text-5xl">{c.big}</span>
-                  <span className="font-display text-lg">{c.answer}</span>
+              <span className={`font-display leading-[1.15] text-white print-dark ${c.big ? 'text-[26px]' : c.seen ? 'text-[21px]' : 'text-lg text-ink-soft'}`}>{c.value}</span>
+              <span className="text-sm text-ink-muted print-muted">{c.note}</span>
+              {c.seen && (
+                <span className="mt-auto inline-flex items-center gap-2 pt-2 text-xs" style={{ color: SEEN_COLORS[c.seen] }}>
+                  <span aria-hidden className="size-2 rounded-full" style={{ background: SEEN_COLORS[c.seen] }} />
+                  {SEEN_LABELS[c.seen]}
                 </span>
-              ) : (
-                <span className={`mt-2 block font-display leading-snug text-white print-dark ${c.seen ? 'text-lg' : 'text-base text-violet-200/80'}`}>{c.answer}</span>
               )}
-              <span className="mt-1 flex items-start gap-1.5 text-xs leading-snug text-violet-300/80 print-muted">
-                {c.color && <Dot color={c.color} className="mt-1" />} {c.detail}
-              </span>
-              {c.seen && <SeenLabel seen={c.seen} className="mt-auto pt-2" />}
             </>
           );
-          const cls = `panel flex h-full flex-col px-4 py-3.5 transition ${asked ? 'border-gold-400/70 bg-gold-400/[0.06]' : ''} ${
-            c.href ? 'hover:border-white/25' : ''
-          }`;
+          const cls = `flex h-full flex-col gap-1.5 rounded-[22px] border p-[22px] text-left transition bg-[linear-gradient(180deg,rgba(30,20,66,0.7),rgba(14,10,34,0.7))] ${
+            asked ? 'border-gold-400/70 shadow-[0_0_0_1px_rgba(246,199,127,0.25),0_10px_34px_rgba(246,199,127,0.12)]' : 'border-lavender-300/16'
+          } ${c.href ? 'hover:-translate-y-0.5 hover:border-gold-400/50' : ''}`;
           return (
             <li key={c.key}>
               {c.href ? (
                 <a href={c.href} onClick={(e) => jump(e, c.href!.slice(1))} className={cls}>
-                  {Body}
+                  {body}
                 </a>
               ) : (
-                <div className={cls}>{Body}</div>
+                <div className={cls}>{body}</div>
               )}
             </li>
           );
         })}
       </ul>
-      <p className="mt-3 text-xs leading-relaxed text-violet-300/70 print-muted">{DISCLAIMER}</p>
+      <p className="mt-3.5 text-xs leading-relaxed text-ink-faint print-muted">{DISCLAIMER}</p>
     </section>
   );
 }
 
+const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 /** Older solo readings and couples readings: named traits instead of life answers. */
 function AtAGlance({ traits }: { traits: NonNullable<Reading['traits']> }) {
   return (
-    <section id="s-glance" className="mb-8 scroll-mt-6" aria-labelledby="glance-title">
-      <h2 id="glance-title" className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">At a glance</h2>
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <section id="s-glance" className="scroll-mt-6" aria-labelledby="glance-title">
+      <h2 id="glance-title" className="font-display text-[30px] font-medium text-white print-dark">At a glance</h2>
+      <ul className="mt-5 grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))]">
         {traits.map((t) => {
           const color = t.line && t.line !== 'none' ? LINE_COLORS[t.line] : undefined;
           return (
-            <li key={t.label} className="panel relative overflow-hidden px-4 py-3.5">
-              <span aria-hidden className="absolute inset-y-0 left-0 w-1" style={{ background: color ?? 'rgb(254 200 120 / 0.5)' }} />
-              <span className="text-[0.7rem] font-bold uppercase tracking-wider text-violet-300/80 print-muted">{t.label}</span>
-              <span className="mt-1 block font-display text-lg leading-snug text-white print-dark">{t.value}</span>
+            <li key={t.label} className="flex flex-col gap-1.5 rounded-[22px] border border-lavender-300/16 bg-[linear-gradient(180deg,rgba(30,20,66,0.7),rgba(14,10,34,0.7))] p-[22px]">
+              <span className="text-xs uppercase tracking-[0.12em] text-gold-400 print-muted">{t.label}</span>
+              <span className="font-display text-[21px] leading-[1.15] text-white print-dark">{t.value}</span>
               {t.line && t.line !== 'none' && (
-                <span className="mt-1 flex items-center gap-1.5 text-xs text-violet-300/60 print-muted">
-                  <Dot color={color} /> {LINE_NAMES[t.line]}
+                <span className="mt-1 flex items-center gap-2 text-sm text-ink-muted print-muted">
+                  <Dot color={color} glow /> {LINE_NAMES[t.line]}
                 </span>
               )}
             </li>
@@ -346,25 +341,33 @@ function AtAGlance({ traits }: { traits: NonNullable<Reading['traits']> }) {
 /** Couples and older readings: big marriage and children numbers under the traits. */
 function FamilyCards({ family }: { family: NonNullable<Reading['family']> }) {
   return (
-    <div className="mb-8 grid grid-cols-2 gap-3">
-      {(
-        [
-          [HeartHandshake, 'Marriage', family.marriages, 'Marriage', 'Marriages'],
-          [Baby, 'Children', family.children, 'Child', 'Children'],
-        ] as const
-      ).map(([Icon, label, p, one, many]) => (
-        <a key={label} href="#s-family" onClick={(e) => jump(e, 's-family')} className="panel block px-4 py-3.5 hover:border-white/25">
-          <span className="flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-violet-300/90">
-            <Icon size={14} className="text-gold-400" /> {label}
-          </span>
-          <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-white print-dark">
-            <span className="whitespace-nowrap font-display text-4xl leading-none">{p.range}</span>
-            <span className="font-display text-lg">{countLabel(p.range, one, many)}</span>
-          </span>
-          {p.visibility && <SeenLabel seen={p.visibility} className="mt-2" />}
-        </a>
-      ))}
-      <p className="col-span-2 text-xs leading-relaxed text-violet-300/70 print-muted">{DISCLAIMER}</p>
+    <div>
+      <div className="grid grid-cols-2 gap-3.5">
+        {(
+          [
+            ['Marriage', family.marriages, 'marriage', 'marriages'],
+            ['Children', family.children, 'child', 'children'],
+          ] as const
+        ).map(([label, p, one, many]) => (
+          <a
+            key={label}
+            href="#s-family"
+            onClick={(e) => jump(e, 's-family')}
+            className="flex flex-col gap-1.5 rounded-[22px] border border-lavender-300/16 bg-[linear-gradient(180deg,rgba(30,20,66,0.7),rgba(14,10,34,0.7))] p-[22px] hover:border-gold-400/50"
+          >
+            <span className="text-xs uppercase tracking-[0.12em] text-gold-400">{label}</span>
+            <span className="font-display text-[26px] leading-[1.15] text-white print-dark">
+              {p.range} {countLabel(p.range, one, many)}
+            </span>
+            {p.visibility && (
+              <span className="mt-1 inline-flex items-center gap-2 text-xs" style={{ color: SEEN_COLORS[p.visibility] }}>
+                <span aria-hidden className="size-2 rounded-full" style={{ background: SEEN_COLORS[p.visibility] }} /> {SEEN_LABELS[p.visibility]}
+              </span>
+            )}
+          </a>
+        ))}
+      </div>
+      <p className="mt-3.5 text-xs leading-relaxed text-ink-faint print-muted">{DISCLAIMER}</p>
     </div>
   );
 }
@@ -375,41 +378,37 @@ const AREA_LABELS = { love: 'Love', career: 'Career', life: 'Life' } as const;
 
 function LifeTimeline({ entries }: { entries: NonNullable<Reading['timeline']> }) {
   return (
-    <section id="s-timeline" className="panel mb-5 scroll-mt-6 p-6 sm:p-8" aria-labelledby="timeline-title">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-gold-400 print-muted">
-        <Milestone size={15} /> Turning points
-      </p>
-      <h2 id="timeline-title" className="mt-2 font-display text-2xl text-white sm:text-3xl print-dark">Your life timeline</h2>
-      <ol className="mt-6">
+    <section id="s-timeline" className={CARD} aria-labelledby="timeline-title">
+      <p className="eyebrow print-muted">Turning points</p>
+      <h2 id="timeline-title" className="mt-2 font-display text-[30px] font-medium text-white print-dark">
+        Your life timeline
+      </h2>
+      <ol className="mt-7">
         {entries.map((e, i) => {
-          const color = e.line !== 'none' ? LINE_COLORS[e.line] : 'var(--color-gold-400)';
+          const color = e.line !== 'none' ? LINE_COLORS[e.line] : '#f6c77f';
           const last = i === entries.length - 1;
           return (
-            <li key={i} className="relative flex gap-4 pb-6 last:pb-0">
-              {!last && <span aria-hidden className="absolute left-[0.6875rem] top-7 bottom-0 w-px bg-white/15" />}
-              <span
-                aria-hidden
-                className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-2 bg-night-900"
-                style={{ borderColor: color }}
-              >
-                <span className="size-2 rounded-full" style={{ background: color }} />
+            <li key={i} className="relative flex gap-[22px] pb-7">
+              <span aria-hidden className="relative flex w-[22px] shrink-0 justify-center">
+                {!last && <span className="absolute -bottom-7 top-[22px] w-px bg-[linear-gradient(180deg,rgba(246,199,127,0.5),rgba(201,184,240,0.12))]" />}
+                <span className="relative mt-1 size-3.5 rounded-full" style={{ background: color, boxShadow: `0 0 0 5px rgba(246,199,127,0.08), 0 0 14px ${color}` }} />
               </span>
               <div className="min-w-0">
-                <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="font-bold text-gold-400 print-dark">{e.when}</span>
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[0.7rem] font-bold text-violet-300/90">{AREA_LABELS[e.area]}</span>
-                  {e.timing === 'unclear' && <span className="text-xs text-violet-300/60">Timing unclear</span>}
+                <p className="flex flex-wrap items-center gap-2.5">
+                  <span className="font-accent text-[22px] italic text-gold-300 print-dark">{e.when}</span>
+                  <span className="rounded-full bg-lavender-300/10 px-2.5 py-0.5 text-xs text-[#c8bee8] print-muted">
+                    {AREA_LABELS[e.area]}
+                    {e.timing === 'unclear' ? ' · timing unclear' : ''}
+                  </span>
                 </p>
-                <p className="mt-0.5 font-display text-lg text-white print-dark">{e.title}</p>
-                <p className="mt-1 font-read leading-relaxed text-violet-100 print-dark">{e.detail}</p>
+                <p className="mt-1 text-[19px] font-medium text-white print-dark">{e.title}</p>
+                <p className="mt-1 text-base leading-relaxed text-ink-muted print-dark">{e.detail}</p>
               </div>
             </li>
           );
         })}
       </ol>
-      <p className="mt-6 text-xs leading-relaxed text-violet-300/70 print-muted">
-        Ages come from the traditional palmistry timing scale and are approximate and symbolic, not forecasts.
-      </p>
+      <p className="text-xs text-ink-faint print-muted">Ages come from the traditional palmistry timing scale and are approximate and symbolic, not forecasts.</p>
     </section>
   );
 }
@@ -422,111 +421,91 @@ function SectionCard({
   asked,
   careerPaths,
   family,
+  compare = false,
 }: {
   section: ReadingSection;
   hands: HandObservation[];
   asked?: boolean;
   careerPaths?: string[];
   family?: Reading['family'];
+  /** Born With vs. Built: show the left and right hands side by side. */
+  compare?: boolean;
 }) {
-  const Icon = ICONS[s.id] ?? Sparkles;
   const lines = s.lines ?? [];
+  const evidence = s.evidence.map((e) => (typeof e === 'string' ? e : `${e.text}${e.visibility === 'faint' ? ' (faint)' : ''}`));
   return (
-    <section id={`s-${s.id}`} className={`panel scroll-mt-6 p-6 sm:p-8 ${asked ? 'border-gold-400/60' : ''}`}>
-      {asked && <p className="mb-3 inline-block rounded-full bg-gold-400 px-2.5 py-0.5 text-xs font-bold text-night-900">You asked about this</p>}
-      <div className="flex items-start gap-4">
-        <div className="min-w-0 flex-1">
-          {s.name ? (
-            <>
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-gold-400 print-muted">
-                <Icon size={15} /> {s.title}
-              </p>
-              <h2 className="mt-2 font-display text-2xl leading-tight text-white sm:text-3xl print-dark">{s.name}</h2>
-            </>
-          ) : (
-            <h2 className="flex items-center gap-3 font-display text-xl text-white sm:text-2xl print-dark">
-              <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Icon size={20} /></span>
-              {s.title}
-            </h2>
-          )}
+    <section id={`s-${s.id}`} className={`${CARD} ${asked ? '!border-gold-400/60' : ''}`}>
+      {asked && <p className="mb-4 inline-block rounded-full bg-gold-400 px-3 py-1 text-xs font-medium text-plum-900">You asked about this</p>}
+      <div className="flex flex-wrap items-start justify-between gap-5">
+        <div className="min-w-0 flex-[1_1_15rem]">
+          <p className="eyebrow print-muted">{s.title}</p>
+          <h2 className={`mt-2 leading-[1.1] text-white print-dark ${s.name ? 'font-accent text-[40px] font-medium italic' : 'font-display text-[30px] font-medium'}`}>
+            {s.name ?? s.title}
+          </h2>
           {s.tags && s.tags.length > 0 && (
-            <ul className="mt-3 flex flex-wrap gap-2">
+            <p className="mt-3 flex flex-wrap gap-2">
               {s.tags.map((t) => (
-                <li key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-violet-100 print-dark">{t}</li>
+                <Chip key={t}>{t}</Chip>
               ))}
-            </ul>
+            </p>
           )}
         </div>
         {lines.length > 0 && hands.length > 0 && (
-          <div className="flex shrink-0 gap-1">
-            {hands.map((h) => (
-              <figure key={h.hand} className="text-center">
-                <HandDiagram
-                  hand={h}
-                  highlight={lines}
-                  mini
-                  className={hands.length > 1 ? 'w-12 sm:w-16' : 'w-16 sm:w-20'}
-                  title={`${h.hand} hand diagram highlighting the ${lines.map((l) => LINE_NAMES[l].toLowerCase()).join(' and ')}`}
-                />
-                {hands.length > 1 && <figcaption className="text-[0.65rem] text-violet-300/60">{h.hand === 'left' ? 'Left' : 'Right'}</figcaption>}
-              </figure>
+          <div className="flex shrink-0 items-center gap-3.5 text-xs text-ink-subtle">
+            {hands.map((h, i) => (
+              <span key={h.hand} className="contents">
+                {i > 0 && <ArrowRight size={24} className="text-gold-400" aria-hidden />}
+                <span className="flex flex-col items-center gap-1">
+                  <span
+                    className={`flex items-center justify-center rounded-card-sm border p-1 ${
+                      compare && i === hands.length - 1 ? 'border-line-fate/40 bg-line-fate/[0.12]' : 'border-lavender-300/15 bg-lavender-300/[0.08]'
+                    }`}
+                  >
+                    <HandDiagram
+                      hand={h}
+                      highlight={lines}
+                      mini
+                      className="w-14"
+                      title={`${h.hand} hand diagram highlighting the ${lines.map((l) => LINE_NAMES[l].toLowerCase()).join(' and ')}`}
+                    />
+                  </span>
+                  {compare && (h.hand === 'left' ? 'Left' : 'Right')}
+                </span>
+              </span>
             ))}
           </div>
         )}
       </div>
 
-      {lines.length > 0 && (
-        <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-violet-300/80 print-muted">
-          <span className="font-bold uppercase tracking-wider text-violet-300/60">Read from</span>
-          {lines.map((l) => (
-            <span key={l} className="flex items-center gap-1.5"><Dot color={LINE_COLORS[l]} /> {LINE_NAMES[l]}</span>
-          ))}
-        </p>
-      )}
-
       {family && (
-        <div className="mt-5">
+        <div className="mt-6">
           <FamilyDetails family={family} />
         </div>
       )}
 
-      <div className="mt-5">
-        <Prose text={s.body} />
-      </div>
+      <Prose text={s.body} className="mt-6 max-w-[760px]" />
 
       {careerPaths && careerPaths.length > 0 && (
-        <div className="mt-5">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-violet-300/60 print-muted">Paths that fit</p>
-          <ul className="flex flex-wrap gap-2">
+        <div className="mt-6">
+          <p className="text-xs uppercase tracking-[0.12em] text-gold-400 print-muted">Paths that fit</p>
+          <ul className="mt-2.5 flex flex-wrap gap-2">
             {careerPaths.map((c) => (
-              <li key={c} className="rounded-xl border border-gold-400/30 bg-gold-400/[0.06] px-3 py-1.5 text-sm font-bold text-white print-dark">{c}</li>
+              <li key={c} className="rounded-full border border-gold-400/35 bg-gold-400/[0.08] px-4 py-1.5 text-base text-gold-300 print-dark">
+                {c}
+              </li>
             ))}
           </ul>
         </div>
       )}
 
       {s.tension && (
-        <div className="mt-5 rounded-xl border-l-2 border-gold-400/60 bg-white/[0.03] px-4 py-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-gold-400 print-muted">The other side</p>
-          <p className="mt-1 font-read leading-relaxed text-violet-100 print-dark">{s.tension}</p>
+        <div className="mt-6 rounded-card-sm border border-[#f28ba8]/25 bg-[#f28ba8]/[0.06] px-[22px] py-5">
+          <p className="font-display text-base tracking-[0.06em] text-[#f7a9bf] print-muted">The other side</p>
+          <p className="mt-1.5 text-base leading-relaxed text-[#e4dcfa] print-dark">{s.tension}</p>
         </div>
       )}
 
-      {s.evidence.length > 0 && (
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-white/5 pt-4">
-          <span className="text-xs font-bold uppercase tracking-wider text-violet-300/60 print-muted">Based on</span>
-          {s.evidence.map((e) => {
-            const text = typeof e === 'string' ? e : e.text;
-            const faint = typeof e !== 'string' && e.visibility === 'faint';
-            return (
-              <span key={text} className="rounded-full bg-white/5 px-3 py-1 text-xs text-violet-200 print-muted">
-                {text}
-                {faint && <span className="text-gold-400/80"> · faint</span>}
-              </span>
-            );
-          })}
-        </div>
-      )}
+      {evidence.length > 0 && <p className="mt-[18px] text-xs leading-relaxed text-ink-subtle print-muted">Based on: {evidence.join(' · ')}</p>}
     </section>
   );
 }
@@ -535,37 +514,39 @@ function FamilyDetails({ family }: { family: NonNullable<Reading['family']> }) {
   return (
     <div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Prediction icon={HeartHandshake} label="Significant marriages / partnerships" p={family.marriages} one="Marriage" many="Marriages" />
-        <Prediction icon={Baby} label="Potential children" p={family.children} one="Child" many="Children" />
+        <Prediction label="Significant marriages or partnerships" p={family.marriages} one="marriage" many="marriages" />
+        <Prediction label="Potential children" p={family.children} one="child" many="children" />
       </div>
-      <p className="mt-4 font-read leading-relaxed text-violet-100 print-dark">{family.timing}</p>
-      <p className="mt-3 text-xs italic leading-relaxed text-violet-300/60 print-muted">
-        These numbers come from the relationship and children lines on the edge of your palm, as traditional palmistry reads them. They are not
-        predictions of how many marriages or children you will have, and family comes in many forms.
+      <p className="mt-4 text-base leading-relaxed text-ink-soft print-dark">{family.timing}</p>
+      <p className="mt-3 text-xs leading-relaxed text-ink-faint print-muted">
+        These numbers come from the relationship and children lines on the edge of your palm, as traditional palmistry reads them. They are not predictions of how
+        many marriages or children you will have, and family comes in many forms.
       </p>
     </div>
   );
 }
 
-function Prediction({ icon: Icon, label, p, one, many }: { icon: LucideIcon; label: string; p: FamilyPrediction; one: string; many: string }) {
+function Prediction({ label, p, one, many }: { label: string; p: FamilyPrediction; one: string; many: string }) {
   const unreadable = p.range.trim() === '?' || p.visibility === 'not_assessable';
   return (
-    <div className="rounded-xl bg-white/[0.04] p-5 text-center">
-      <Icon size={22} className="mx-auto mb-2 text-gold-400" />
-      <p className="text-xs font-bold uppercase tracking-wider text-violet-300/80 print-muted">{label}</p>
+    <div className="rounded-card-sm border border-lavender-300/12 bg-[rgba(30,20,66,0.6)] p-5">
+      <p className="text-xs uppercase tracking-[0.12em] text-gold-400 print-muted">{label}</p>
       {unreadable ? (
-        <p className="my-2 font-display text-lg text-violet-200 print-dark">Can’t read from these photos</p>
+        <p className="mt-2 font-display text-xl text-ink-soft print-dark">Can’t read from these photos</p>
       ) : (
-        <p className="my-1 flex flex-wrap items-baseline justify-center gap-x-2 text-white print-dark">
-          <span className="whitespace-nowrap font-display text-4xl">{p.range}</span>
-          <span className="font-display text-lg">{countLabel(p.range, one, many)}</span>
+        <p className="mt-1 font-display text-[34px] leading-tight text-white print-dark">
+          {p.range} <span className="text-[22px]">{countLabel(p.range, one, many)}</span>
         </p>
       )}
-      <p className="mb-3 flex flex-wrap items-center justify-center gap-x-3 text-xs text-violet-300/70 print-muted">
-        {!unreadable && <span>{p.confidence} confidence</span>}
-        {p.visibility && <SeenLabel seen={p.visibility} />}
+      <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-ink-muted print-muted">
+        {!unreadable && <span>{capFirst(p.confidence)} confidence</span>}
+        {p.visibility && (
+          <span className="inline-flex items-center gap-2" style={{ color: SEEN_COLORS[p.visibility] }}>
+            <span aria-hidden className="size-2 rounded-full" style={{ background: SEEN_COLORS[p.visibility] }} /> {SEEN_LABELS[p.visibility]}
+          </span>
+        )}
       </p>
-      <p className="text-left text-sm leading-relaxed text-violet-100 print-dark">{p.explanation}</p>
+      <p className="mt-3 text-base leading-relaxed text-ink-soft print-dark">{p.explanation}</p>
     </div>
   );
 }
@@ -574,22 +555,20 @@ function Reflection({ steps }: { steps: string[] }) {
   const [open, setOpen] = useState(false);
   if (steps.length === 0) return null;
   return (
-    <section id="s-reflection" className="panel scroll-mt-6 overflow-hidden">
-      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 p-5 text-left sm:px-8 print:hidden">
-        <span className="flex items-center gap-3">
-          <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Target size={18} /></span>
-          <span>
-            <span className="block font-display text-lg text-white">Personal reflection</span>
-            <span className="block text-sm text-violet-300/70">Optional: {steps.length} small things to try in the next two weeks</span>
-          </span>
+    <section id="s-reflection" className={`${CARD} !py-0`}>
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex min-h-11 w-full items-center justify-between gap-3 py-6 text-left print:hidden">
+        <span>
+          <span className="eyebrow block">Optional</span>
+          <span className="mt-1 block font-display text-2xl font-medium text-white">Personal reflection</span>
+          <span className="mt-1 block text-base text-ink-muted">{steps.length} small things to try in the next two weeks</span>
         </span>
-        <ChevronDown className={`shrink-0 text-violet-300 transition ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`shrink-0 text-gold-400 transition ${open ? 'rotate-180' : ''}`} />
       </button>
-      <ol className={`space-y-3 px-5 pb-6 sm:px-8 ${open ? '' : 'hidden print:block'}`}>
+      <ol className={`space-y-3 pb-7 ${open ? '' : 'hidden print:block'}`}>
         {steps.map((a, i) => (
-          <li key={a} className="flex gap-3 text-violet-100 print-dark">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-night-900">{i + 1}</span>
-            <span className="pt-0.5 leading-relaxed">{a}</span>
+          <li key={a} className="flex gap-3 text-ink-soft print-dark">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[image:var(--gradient-gold)] text-sm font-semibold text-plum-900">{i + 1}</span>
+            <span className="pt-1 text-base leading-relaxed">{a}</span>
           </li>
         ))}
       </ol>
@@ -603,7 +582,6 @@ interface NavItem {
   id: string;
   label: string;
   color?: string;
-  lines?: LineKey[];
 }
 
 /** The id of the section in the middle band of the screen. */
@@ -632,23 +610,26 @@ function jump(e: MouseEvent, id: string) {
   history.replaceState(null, '', `#${id}`);
 }
 
-/** Desktop: section links in the left sidebar. */
+/** Desktop: the "Your reading" card on the left, which stays in view while the reading scrolls. */
 function SideNav({ items, active }: { items: NavItem[]; active?: string }) {
   return (
-    <nav aria-label="Reading sections">
-      <p className="mb-2 px-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400">Your reading</p>
-      <ul className="space-y-0.5">
+    <nav
+      aria-label="Your reading"
+      className="sticky top-6 hidden max-h-[calc(100vh-3rem)] max-w-[260px] min-w-0 flex-[1_1_220px] overflow-y-auto rounded-card border border-lavender-300/14 bg-[rgba(20,16,44,0.55)] px-2.5 py-5 lg:block print:hidden"
+    >
+      <p className="mx-3 mb-2.5 font-display text-[15px] tracking-[0.12em] text-gold-400">Your reading</p>
+      <ul>
         {items.map((i) => (
           <li key={i.id}>
             <a
               href={`#${i.id}`}
               aria-current={active === i.id ? 'true' : undefined}
               onClick={(e) => jump(e, i.id)}
-              className={`flex items-center gap-2 rounded-lg border-l-2 px-3 py-1.5 text-sm transition ${
-                active === i.id ? 'border-gold-400 bg-white/8 font-bold text-white' : 'border-transparent text-violet-300/80 hover:text-white'
+              className={`flex min-h-10 items-center gap-3 rounded-xl px-3 py-1.5 text-[15px] transition ${
+                active === i.id ? 'bg-gold-400/10 text-white shadow-[inset_2px_0_0_#f6c77f]' : 'text-[#c8bee8] hover:bg-lavender-300/[0.08] hover:text-white'
               }`}
             >
-              <Dot color={i.color ?? 'rgb(255 255 255 / 0.2)'} />
+              <span aria-hidden className="size-[7px] shrink-0 rounded-full" style={{ background: i.color }} />
               {i.label}
             </a>
           </li>
@@ -670,7 +651,7 @@ function BottomNav({ items, active }: { items: NavItem[]; active?: string }) {
     <nav aria-label="Reading sections" className="sticky bottom-3 z-20 mt-6 lg:hidden print:hidden">
       <div
         ref={bar}
-        className="flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-night-900/90 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-1 overflow-x-auto rounded-full border border-lavender-300/20 bg-[rgba(10,8,24,0.92)] p-1.5 shadow-2xl shadow-black/60 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((i) => (
           <a
@@ -679,11 +660,11 @@ function BottomNav({ items, active }: { items: NavItem[]; active?: string }) {
             data-id={i.id}
             aria-current={active === i.id ? 'true' : undefined}
             onClick={(e) => jump(e, i.id)}
-            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition ${
-              active === i.id ? 'bg-white/12 text-white' : 'text-violet-300/80 hover:text-white'
+            className={`flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm transition ${
+              active === i.id ? 'bg-gold-400 font-medium text-plum-900' : 'text-[#c8bee8] hover:text-white'
             }`}
           >
-            {i.color && <Dot color={i.color} />}
+            <span aria-hidden className="size-[7px] shrink-0 rounded-full" style={{ background: active === i.id ? '#1a0b2e' : i.color }} />
             {i.label}
           </a>
         ))}

@@ -32,3 +32,6 @@ dist-ssr
 # Local AI comparison (photos of real people: never commit)
 test-photos/
 compare-report/
+
+# Agent worktrees (local only)
+.claude/worktrees/
