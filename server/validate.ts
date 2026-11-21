@@ -1,4 +1,4 @@
-import type { ReadingRequest } from '../shared/types';
+import { CURIOUS_TOPICS, type ReadingRequest } from '../shared/types';
 import { photoSlots } from '../shared/plan';
 
 const MAX_PHOTO_BYTES = 2_500_000; // base64 length; the client sends ~1600px JPEGs
@@ -19,6 +19,7 @@ export function validateRequest(body: unknown): string | null {
     if (p.age !== undefined && (!Number.isInteger(p.age) || p.age < 1 || p.age > 120)) return 'Invalid age';
   }
   if (r.marketingConsent !== undefined && typeof r.marketingConsent !== 'boolean') return 'Invalid marketingConsent';
+  if (r.curious !== undefined && !(CURIOUS_TOPICS as readonly string[]).includes(r.curious)) return 'Invalid curious';
   if (!Array.isArray(r.photos) || r.photos.length > 6) return 'Invalid photos';
   const allowed = new Set(photoSlots(r.people, r.includeFamily).map((s) => s.slot));
   for (const ph of r.photos) {

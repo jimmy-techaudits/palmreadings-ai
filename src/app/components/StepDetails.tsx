@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowRight, Baby } from 'lucide-react';
-import type { Hand, Mode } from '../../../shared/types';
+import { ArrowLeft, ArrowRight, Baby, Briefcase, HeartHandshake, Milestone, Wallet, type LucideIcon } from 'lucide-react';
+import type { Curious, Hand, Mode } from '../../../shared/types';
 import { Button, StepHeader } from './ui';
 
 export interface PersonDraft {
@@ -13,17 +13,27 @@ const PRONOUNS = ['', 'she/her', 'he/him', 'they/them', 'she/they', 'he/they'];
 const input =
   'w-full rounded-xl border border-white/10 bg-night-900/70 px-4 py-3 text-white placeholder:text-violet-300/40 focus:border-gold-400 focus:outline-none';
 
+const CURIOUS_OPTIONS: { value: Curious; label: string; icon: LucideIcon }[] = [
+  { value: 'marriage', label: 'Marriage', icon: HeartHandshake },
+  { value: 'children', label: 'Children', icon: Baby },
+  { value: 'career', label: 'Career', icon: Briefcase },
+  { value: 'money', label: 'Money', icon: Wallet },
+  { value: 'life_changes', label: 'Life changes', icon: Milestone },
+];
+
 interface Props {
   mode: Mode;
   people: PersonDraft[];
   includeFamily: boolean;
+  curious: Curious | null;
   onChange: (people: PersonDraft[]) => void;
   onFamilyChange: (v: boolean) => void;
+  onCuriousChange: (v: Curious | null) => void;
   onBack: () => void;
   onNext: () => void;
 }
 
-export function StepDetails({ mode, people, includeFamily, onChange, onFamilyChange, onBack, onNext }: Props) {
+export function StepDetails({ mode, people, includeFamily, curious, onChange, onFamilyChange, onCuriousChange, onBack, onNext }: Props) {
   const update = (i: number, patch: Partial<PersonDraft>) => onChange(people.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   const ready = people.every((p) => p.dominantHand);
 
@@ -32,7 +42,7 @@ export function StepDetails({ mode, people, includeFamily, onChange, onFamilyCha
       <StepHeader
         eyebrow="Step 2 of 3"
         title={mode === 'couple' ? 'Tell us about you both' : 'Tell us about you'}
-        subtitle="Your dominant hand matters most: it shows the life you’re building, while the other hand shows what you were born with."
+        subtitle="We read both hands. In our method your dominant hand shows the life you’re building and the other shows your natural tendencies."
       />
 
       <div className={`grid gap-5 ${mode === 'couple' ? 'md:grid-cols-2' : ''}`}>
@@ -85,17 +95,56 @@ export function StepDetails({ mode, people, includeFamily, onChange, onFamilyCha
       </div>
 
       <label className="panel mt-5 flex cursor-pointer items-start gap-4 p-5 sm:p-6">
-        <input type="checkbox" className="mt-1 size-5 accent-gold-400" checked={includeFamily} onChange={(e) => onFamilyChange(e.target.checked)} />
+        <input
+          type="checkbox"
+          className="mt-1 size-5 accent-gold-400"
+          checked={includeFamily}
+          onChange={(e) => {
+            onFamilyChange(e.target.checked);
+            if (!e.target.checked && (curious === 'marriage' || curious === 'children')) onCuriousChange(null);
+          }}
+        />
         <span>
           <span className="flex items-center gap-2 font-bold text-white">
             <Baby size={18} className="text-gold-400" /> Include marriage & children predictions
           </span>
           <span className="mt-1 block text-sm leading-relaxed text-violet-200/80">
-            Read from the small lines on the edge of your palm below the little finger. This needs one extra photo of the side of
-            your hand. Some people prefer to skip this, and that’s completely fine.
+            Read from the small lines on the edge of your palm below the little finger, so we’ll ask for one extra photo of the side of
+            your hand. Untick this if you’d rather skip it.
           </span>
         </span>
       </label>
+
+      {mode === 'solo' && (
+        <fieldset className="panel mt-5 p-5 sm:p-6">
+          <legend className="sr-only">What are you most curious about?</legend>
+          <p className="font-bold text-white">
+            What are you most curious about? <span className="font-normal text-violet-300/60">(optional)</span>
+          </p>
+          <p className="mt-1 text-sm text-violet-200/80">We’ll show this first and go deepest on it. You still get the full reading.</p>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {CURIOUS_OPTIONS.map(({ value, label, icon: Icon }) => {
+              const on = curious === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    onCuriousChange(on ? null : value);
+                    if (!on && (value === 'marriage' || value === 'children')) onFamilyChange(true);
+                  }}
+                  className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition ${
+                    on ? 'border-gold-400 bg-gold-400/15 text-white' : 'border-white/10 text-violet-200 hover:border-white/30'
+                  }`}
+                >
+                  <Icon size={16} className="text-gold-400" /> {label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+      )}
 
       <div className="mt-8 flex items-center justify-between">
         <Button variant="ghost" onClick={onBack}><ArrowLeft size={18} /> Back</Button>

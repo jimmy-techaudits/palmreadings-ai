@@ -16,8 +16,8 @@ Comfortaa UI text, Nunito Sans for long reading text.
 ## How a reading works
 
 1. **Choose** – Full Life, Love, Career, or Couples.
-2. **About you** – dominant hand (required), optional name, age, pronouns, and an opt-in toggle for
-   marriage & children predictions.
+2. **About you** – dominant hand (required), optional name, age, pronouns, marriage & children
+   predictions (on by default, can be unticked), and an optional "What are you most curious about?".
 3. **Photos** – both palms are always required. The pinky-side photo of the dominant hand becomes
    required when marriage & children predictions are on (that's where those lines are). Photos are
    resized to ≤1600px JPEG in the browser before upload.
@@ -32,22 +32,32 @@ Comfortaa UI text, Nunito Sans for long reading text.
    deleted 3 years after the link was last opened** by a daily cron job (`expireOldPhotos` in
    `server/store.ts`). An optional checkbox records permission to use the photos in marketing; it can
    be changed later on the private link.
-6. **Results** (`src/app/components/Results.tsx`), phone-first:
-   - headline and summary;
-   - **Your hands**: the palm photo next to a drawn diagram of that hand (`HandDiagram.tsx`), with
-     Left/Right tabs and a legend of the lines. The diagram is generated from the Observe step's
-     description (length, curve, start and end, depth, faintness, forks, branches, breaks, palm and
-     finger shape), not traced from the photo; it says so on the page;
-   - **At a glance**: 4–6 named traits, each tagged with the line it comes from;
-   - section cards, each with a short name (e.g. "The Steady Anchor"), 2–3 tags, the lines it is read
-     from (color-coded, with a mini hand diagram) and short paragraphs;
-   - navigation: on desktop a sticky left sidebar holds the Left/Right (and, for couples, person)
-     picker plus section links; on phones and tablets the same controls sit in a bar that stays at the
-     bottom of the screen. The picker drives every hand diagram on the page;
-   - family predictions (if opted in), action steps, mantra, print-to-PDF, feedback.
+6. **Results** (`src/app/components/Results.tsx`), phone-first, in this order:
+   - headline and summary (one combined reading of both hands);
+   - **Your life at a glance**: Marriage and Children as big numbers or small ranges ("1–2 Marriages",
+     "1 Child") from the relationship and children lines, plus Career, Money, Biggest turning point
+     and Life path. Each card shows how clearly its features could be seen ("Clearly visible", "Faint
+     or partly visible", "Can't assess from this photo") and links to its section; a disclaimer says
+     these are traditional interpretations, not guarantees. If the side photo was skipped, Marriage and
+     Children say so instead of guessing. Couples readings show named traits instead;
+   - **Explore your hands** (`HandExplorer.tsx`): Left/Right cards ("natural tendencies" /
+     "developed path", framed as our method), the photo next to a drawn diagram (`HandDiagram.tsx`,
+     generated from the observations, not traced), each line with its visibility, and a short note on
+     what that hand shows on its own;
+   - **Born With vs. Built**: how the two hands compare;
+   - **Your life timeline**: 3–5 approximate periods from the palmistry timing scale ("Timing unclear"
+     when the palm gives no age);
+   - section cards: a short name, 2–3 tags (not all flattering), the lines it is read from, the text,
+     **The other side** (a real challenge or trade-off), and what it is based on (faint features
+     marked). Career & Success has "Paths that fit"; Marriage & Family shows the numbers with their
+     explanations;
+   - an optional, collapsed **Personal reflection** (the old "next two weeks"), and the mantra.
 
-   Each line has one color everywhere (`LINE_COLORS` in `observationText.ts`). The reading never shows
-   scores, percentages, or health, lifespan or addiction claims (see `server/prompts.ts`).
+   If the person picked what they're **most curious about** during setup (marriage, children, career,
+   money or life changes), that card and section come first and the AI goes deepest there.
+   Navigation: a sticky left sidebar with section links on desktop; a bar at the bottom of the screen on
+   phones. Each line has one color everywhere (`LINE_COLORS` in `observationText.ts`). The reading
+   never shows scores, percentages, or health, lifespan or addiction claims (see `server/prompts.ts`).
 
 ## Saved readings, deletion requests and stats
 

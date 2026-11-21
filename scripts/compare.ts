@@ -230,14 +230,30 @@ function readingHtml(label: string, r: Result): string {
     <h3>${label} <span class="time">${r.seconds}s</span></h3>
     <h4 class="headline">${esc(rd.headline)}</h4>
     <p>${esc(rd.summary)}</p>
-    <p class="traits">${rd.traits.map((t) => `<span>${esc(t.label)}: <b>${esc(t.value)}</b>${t.line && t.line !== 'none' ? ` <small>(${t.line})</small>` : ''}</span>`).join('')}</p>
+    ${
+      rd.glance
+        ? `<p class="traits">${Object.entries(rd.glance)
+            .map(([k, g]) => `<span>${esc(k.replace('_', ' '))}: <b>${esc(g.answer)}</b> <small>(${esc(g.detail)}; ${g.visibility})</small></span>`)
+            .join('')}${
+            rd.family
+              ? `<span>marriages: <b>${esc(rd.family.marriages.range)}</b> <small>(${rd.family.marriages.visibility ?? ''})</small></span><span>children: <b>${esc(rd.family.children.range)}</b> <small>(${rd.family.children.visibility ?? ''})</small></span>`
+              : ''
+          }</p>`
+        : ''
+    }
+    ${rd.traits ? `<p class="traits">${rd.traits.map((t) => `<span>${esc(t.label)}: <b>${esc(t.value)}</b>${t.line && t.line !== 'none' ? ` <small>(${t.line})</small>` : ''}</span>`).join('')}</p>` : ''}
+    ${rd.career_paths?.length ? `<p class="ev">Career paths: ${rd.career_paths.map(esc).join(' · ')}</p>` : ''}
+    ${rd.timeline?.length ? `<details open><summary>Timeline</summary><ol>${rd.timeline.map((t) => `<li><b>${esc(t.when)}</b> – ${esc(t.title)}: ${esc(t.detail)} <small>(${t.timing})</small></li>`).join('')}</ol></details>` : ''}
+    ${rd.hand_notes?.length ? `<details><summary>Each hand on its own</summary><ul>${rd.hand_notes.map((n) => `<li><b>${n.hand}</b>: ${esc(n.summary)}</li>`).join('')}</ul></details>` : ''}
     <details><summary>What it saw in the photos</summary><ul class="obs">${hands}</ul></details>
     ${rd.sections
       .map(
         (s) =>
           `<section><h5>${esc(s.title)}${s.name ? `: <i>${esc(s.name)}</i>` : ''}</h5>${
             s.tags?.length ? `<p class="traits">${s.tags.map((t) => `<span>${esc(t)}</span>`).join('')}${s.lines?.length ? ` <small>lines: ${s.lines.join(', ')}</small>` : ''}</p>` : ''
-          }${prose(s.body)}<p class="ev">Based on: ${s.evidence.map(esc).join(' · ')}</p></section>`,
+          }${prose(s.body)}${s.tension ? `<p><i>Tension: ${esc(s.tension)}</i></p>` : ''}<p class="ev">Based on: ${s.evidence
+            .map((e) => (typeof e === 'string' ? esc(e) : `${esc(e.text)}${e.visibility === 'faint' ? ' (faint)' : ''}`))
+            .join(' · ')}</p></section>`,
       )
       .join('')}
     ${

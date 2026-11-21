@@ -5,9 +5,9 @@
 export const RULEBOOK = `
 # PALMISTRY RULEBOOK
 
-## Hands
-- Non-dominant hand = innate temperament, potential, what they were born with.
-- Dominant hand = what they have developed and are actively living now.
+## Hands (the method this reading follows; one common palmistry convention)
+- Non-dominant hand = natural tendencies and potential.
+- Dominant hand = how they have developed those tendencies and what they are actively living now.
 - Differences between the two hands show growth, effort, or untapped potential. Similarities show deeply rooted traits.
 
 ## Hand shape & element
@@ -96,7 +96,14 @@ export const RULEBOOK = `
 
 ## Children lines: fine vertical lines rising from relationship lines
 - Each clear vertical line = a potential child or a deep nurturing bond. Strong lines are often read as boys, finer lines as girls (offer only as folklore, lightly).
-- No visible lines: not an absence of children; say the lines are too fine to read and nurturing may come in many forms.
+- Count potential children = clear vertical lines; give a small range when some lines are faint.
+- No visible lines: not an absence of children. Use "?" and say the lines are too fine to read in this photo; nurturing may come in many forms.
+
+## Money and success (traditional associations)
+- Clear fate line: steady build through one path or employer. Faint or absent fate line: self-made, income from several sources.
+- Sun line present: recognition and reward for what they create. Mercury line or prominent Mercury mount: business sense, earning through communication or trade.
+- Straight head line: careful with money, good with systems. Strongly sloping head line: earns through creativity, less interested in accumulation.
+- Strong thumb and prominent Jupiter mount: earns through leadership and taking charge. Wide thumb angle: willing to take financial risks.
 
 ## Timing scale (approximate)
 - Life line: start near the index finger ~ age 0, the point below the middle of the index–middle gap ~ age 20, below the middle finger ~ 35, curving below the thumb ~ 50+.

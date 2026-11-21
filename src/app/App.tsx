@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { photoSlots } from '../../shared/plan';
-import type { Focus, Mode, PersonObservation, ReadingRequest, SlotId, Stage } from '../../shared/types';
+import type { Curious, Focus, Mode, PersonObservation, ReadingRequest, SlotId, Stage } from '../../shared/types';
 import { Progress } from './components/Progress';
 import { Results } from './components/Results';
 import { StepChoose } from './components/StepChoose';
@@ -34,7 +34,8 @@ export default function App() {
   const [mode, setMode] = useState<Mode>('solo');
   const [focus, setFocus] = useState<Focus>('overall');
   const [people, setPeople] = useState<PersonDraft[]>([emptyPerson()]);
-  const [includeFamily, setIncludeFamily] = useState(false);
+  const [includeFamily, setIncludeFamily] = useState(true);
+  const [curious, setCurious] = useState<Curious | null>(null);
   const [photos, setPhotos] = useState<Partial<Record<SlotId, string>>>({});
   const [issues, setIssues] = useState<Partial<Record<SlotId, string>>>({});
   const [consent, setConsent] = useState(false);
@@ -80,7 +81,8 @@ export default function App() {
     setMarketingConsent(false);
     setObservations(null);
     setStage(null);
-    setIncludeFamily(false);
+    setIncludeFamily(true);
+    setCurious(null);
     setPeople([emptyPerson()]);
     setStep('choose');
   }
@@ -98,6 +100,7 @@ export default function App() {
       })),
       photos: Object.entries(photos).map(([slot, data]) => ({ slot: slot as SlotId, data: stripDataUrl(data!) })),
       marketingConsent,
+      curious: mode === 'solo' && curious ? curious : undefined,
       turnstileToken: botToken ?? undefined,
     };
     setBotToken(null);
@@ -107,7 +110,7 @@ export default function App() {
     setStage(null);
     setObservations(null);
     setStep('reading');
-    track('generate_reading', { mode, focus, include_family: includeFamily });
+    track('generate_reading', { mode, focus, include_family: includeFamily, curious: curious ?? 'none' });
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -169,6 +172,8 @@ export default function App() {
           mode={mode}
           people={people}
           includeFamily={includeFamily}
+          curious={curious}
+          onCuriousChange={setCurious}
           onChange={setPeople}
           onFamilyChange={setIncludeFamily}
           onBack={() => setStep('choose')}

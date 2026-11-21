@@ -1,30 +1,36 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import {
-  Baby, Briefcase, Brain, ChevronDown, Compass, Flame, Gem, Heart, HeartHandshake, Loader2,
-  Check, Copy, Link2, MessageCircle, Milestone, Printer, RotateCcw, Send, Sparkles, Sprout, Target, ThumbsDown, ThumbsUp,
-  Trash2, TrendingUp, Users, type LucideIcon,
+  Baby, Brain, Briefcase, ChevronDown, Compass, Flame, Gem, Heart, HeartHandshake, MessageCircle, Milestone, Printer,
+  RotateCcw, Sparkles, Sprout, Target, TrendingUp, Users, Wallet, type LucideIcon,
 } from 'lucide-react';
-import { LINE_KEYS, type FamilyPrediction, type Hand, type HandObservation, type LineKey, type PersonObservation, type Reading, type ReadingSection } from '../../../shared/types';
+import type { Curious, FamilyPrediction, GlanceItem, Hand, HandObservation, LineKey, Reading, ReadingSection, Seen } from '../../../shared/types';
 import { FOCUS_LABELS } from '../../../shared/plan';
-import { sendFeedback } from '../lib/api';
 import type { SavedReading } from '../lib/storage';
 import { HandDiagram } from './HandDiagram';
-import { LINE_COLORS, LINE_MEANINGS, LINE_NAMES, lineWords } from './observationText';
+import { HandExplorer } from './HandExplorer';
+import { LINE_COLORS, LINE_NAMES } from './observationText';
+import { DeleteBox, FeedbackBox, MarketingToggle, PhotoStrip, PrivateLink, type ResultPhoto } from './ReadingTools';
+import { Dot, Prose, SeenLabel } from './readingUi';
 import { Button } from './ui';
 
+export type { ResultPhoto } from './ReadingTools';
+
 const ICONS: Record<string, LucideIcon> = {
-  personality: Sparkles, potential_vs_path: Sprout, love: Heart, career: Briefcase, energy: Flame, turning_points: Milestone,
+  personality: Sparkles, potential_vs_path: Sprout, love: Heart, marriage_family: HeartHandshake, career: Briefcase, money: Wallet,
+  energy: Flame, turning_points: Milestone,
   love_style: Heart, needs: HeartHandshake, patterns: Brain, timeline: Milestone, next_chapter: Compass,
   work_style: Briefcase, drive: Target, strengths: Gem, blockers: Brain, career_timeline: TrendingUp,
   person_a: Users, person_b: Users, dynamic: HeartHandshake, communication: MessageCircle, long_term: Compass,
 };
 
-export interface ResultPhoto {
-  slot: string;
-  url: string;
-  label: string;
-}
-
+/** Which section answers each "most curious about" topic, in order of preference. */
+const CURIOUS_SECTIONS: Record<Curious, string[]> = {
+  marriage: ['marriage_family'],
+  children: ['marriage_family'],
+  career: ['career', 'strengths', 'work_style'],
+  money: ['money'],
+  life_changes: [],
+};
 interface ResultsProps {
   saved: SavedReading;
   onReset: () => void;
@@ -42,40 +48,41 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
   const title = mode === 'couple' ? `${names[0] || 'Partner A'} & ${names[1] || 'Partner B'}` : names[0] ? `${names[0]}’s Reading` : 'Your Reading';
   const personName = (i: number) => names[i] || (i === 0 ? 'Partner A' : 'Partner B');
 
-  // Which person's hand, and which hand, the diagrams show. Starts on the dominant hand.
-  const [person, setPerson] = useState(0);
-  const [side, setSide] = useState<Hand>(dominantHands?.[0] ?? 'right');
-  const picker: HandPick = {
-    mode,
-    observations,
-    dominantHands,
-    personName,
-    person,
-    side,
-    setPerson: (i) => {
-      setPerson(i);
-      setSide(dominantHands?.[i] ?? 'right');
-    },
-    setSide,
-  };
-  /** The hand currently chosen in the picker, for a given person. */
-  const handFor = (i: number): HandObservation | undefined => {
+  /** A person's dominant hand: the hand the small diagrams show. */
+  const mainHand = (i: number): HandObservation | undefined => {
     const hands = observations[i]?.hands ?? [];
-    return hands.find((h) => h.hand === side) ?? hands[0];
+    return hands.find((h) => h.hand === dominantHands?.[i]) ?? hands.find((h) => h.hand === 'right') ?? hands[0];
   };
+  const bothHands = (i: number) => (['left', 'right'] as Hand[]).flatMap((s) => observations[i]?.hands.filter((h) => h.hand === s) ?? []);
 
-  const navItems = useMemo<NavItem[]>(
-    () => [
+  // The section that answers what they were most curious about comes first.
+  const curiousId = reading.curious ? CURIOUS_SECTIONS[reading.curious].find((id) => reading.sections.some((s) => s.id === id)) : undefined;
+  const compare = reading.sections.find((s) => s.id === 'potential_vs_path');
+  const sections = useMemo(() => {
+    const rest = reading.sections.filter((s) => s.id !== 'potential_vs_path');
+    const first = rest.filter((s) => s.id === curiousId);
+    return [...first, ...rest.filter((s) => s.id !== curiousId)];
+  }, [reading, curiousId]);
+  const familyInSection = reading.sections.some((s) => s.id === 'marriage_family');
+  const timelineFirst = reading.curious === 'life_changes';
+
+  const navItems = useMemo<NavItem[]>(() => {
+    const timeline = reading.timeline?.length ? [{ id: 's-timeline', label: 'Life timeline' }] : [];
+    return [
+      { id: 's-glance', label: reading.glance ? 'Life at a glance' : 'At a glance' },
+      ...(timelineFirst ? timeline : []),
       { id: 's-hands', label: 'Your hands' },
-      { id: 's-glance', label: 'At a glance' },
-      ...reading.sections.map((s) => ({ id: `s-${s.id}`, label: s.title, color: s.lines?.[0] ? LINE_COLORS[s.lines[0]] : undefined, lines: s.lines })),
-      ...(reading.family ? [{ id: 's-family', label: 'Marriage & Family' }] : []),
-      { id: 's-next', label: 'Next steps' },
-    ],
-    [reading],
-  );
+      ...(compare ? [{ id: `s-${compare.id}`, label: compare.title, color: lineColor(compare.lines), lines: compare.lines }] : []),
+      ...(timelineFirst ? [] : timeline),
+      ...sections.map((s) => ({ id: `s-${s.id}`, label: s.title, color: lineColor(s.lines), lines: s.lines })),
+      ...(reading.family && !familyInSection ? [{ id: 's-family', label: 'Marriage & Family' }] : []),
+      { id: 's-reflection', label: 'Reflection' },
+    ];
+  }, [reading, sections, compare, familyInSection, timelineFirst]);
   const active = useActiveSection(navItems);
   const activeLines = navItems.find((n) => n.id === active)?.lines;
+
+  const timeline = reading.timeline?.length ? <LifeTimeline entries={reading.timeline} /> : null;
 
   return (
     <article className="mx-auto max-w-3xl lg:max-w-none">
@@ -89,18 +96,13 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
 
       <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-10 print:!block">
         <aside className="hidden lg:block print:hidden" aria-label="Reading navigation">
-          <div className="sticky top-6 space-y-6">
-            <div className="panel p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-400">Showing</p>
-                {handFor(person) && (
-                  <HandDiagram hand={handFor(person)!} highlight={activeLines?.length ? activeLines : undefined} mini className="-my-2 w-11 shrink-0" />
-                )}
+          <div className="sticky top-6">
+            {mainHand(0) && (
+              <div className="mb-4 flex items-center gap-3 px-3">
+                <HandDiagram hand={mainHand(0)!} highlight={activeLines?.length ? activeLines : undefined} mini className="w-12 shrink-0" />
+                <p className="text-xs leading-snug text-violet-300/70">Lines used in the section you’re reading light up here.</p>
               </div>
-              <div className="[&_[role=radiogroup]]:flex [&_[role=radiogroup]]:w-full">
-                <HandPicker pick={picker} vertical />
-              </div>
-            </div>
+            )}
             <SideNav items={navItems} active={active} />
           </div>
         </aside>
@@ -109,30 +111,56 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
           {readingId && <PrivateLink />}
 
           <div>
-            <HandsHero pick={picker} hand={handFor(person)} photos={photos} />
+            {reading.glance ? (
+              <LifeAtAGlance glance={reading.glance} family={reading.family} curious={reading.curious} sectionIds={reading.sections.map((s) => s.id)} />
+            ) : (
+              <>
+                {reading.traits && <AtAGlance traits={reading.traits} />}
+                {reading.family && <FamilyCards family={reading.family} />}
+              </>
+            )}
 
-            <AtAGlance traits={reading.traits} />
+            {timelineFirst && timeline}
+
+            <HandExplorer
+              mode={mode}
+              observations={observations}
+              dominantHands={dominantHands}
+              personName={personName}
+              notes={reading.hand_notes}
+              photos={photos}
+            />
 
             <div className="space-y-5">
-              {reading.sections.map((s) => (
-                <SectionCard key={s.id} section={s} hand={handFor(s.id === 'person_b' ? 1 : 0)} />
-              ))}
+              {compare && <SectionCard section={compare} hands={bothHands(0)} />}
 
-              {reading.family && <FamilyPanel family={reading.family} />}
+              {!timelineFirst && timeline}
 
-              <section id="s-next" className="panel scroll-mt-6 p-6 sm:p-8">
-                <h2 className="mb-4 flex items-center gap-3 font-display text-xl text-white print-dark">
-                  <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Target size={20} /></span> Your next two weeks
-                </h2>
-                <ol className="space-y-3">
-                  {reading.action_steps.map((a, i) => (
-                    <li key={a} className="flex gap-3 text-violet-100 print-dark">
-                      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-night-900">{i + 1}</span>
-                      <span className="pt-0.5 leading-relaxed">{a}</span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
+              {sections.map((s) => {
+                const hand = mainHand(s.id === 'person_b' ? 1 : 0);
+                const isCareer = s.id === (['career', 'strengths', 'work_style'].find((id) => reading.sections.some((x) => x.id === id)) ?? '');
+                return (
+                  <SectionCard
+                    key={s.id}
+                    section={s}
+                    hands={hand ? [hand] : []}
+                    asked={s.id === curiousId}
+                    careerPaths={isCareer ? reading.career_paths : undefined}
+                    family={s.id === 'marriage_family' ? reading.family : undefined}
+                  />
+                );
+              })}
+
+              {reading.family && !familyInSection && (
+                <section id="s-family" className="panel scroll-mt-6 p-6 sm:p-8">
+                  <h2 className="mb-5 flex items-center gap-3 font-display text-xl text-white print-dark">
+                    <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Baby size={20} /></span> Marriage & Family
+                  </h2>
+                  <FamilyDetails family={reading.family} />
+                </section>
+              )}
+
+              <Reflection steps={reading.action_steps} />
 
               <section className="rounded-2xl border border-gold-400/30 bg-gradient-to-br from-violet-900/40 to-night-900 p-8 text-center">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">
@@ -141,7 +169,7 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
                 <p className="font-display text-2xl leading-snug text-white print-dark">“{reading.closing.text}”</p>
               </section>
             </div>
-            <BottomNav items={navItems} active={active} pick={picker} />
+            <BottomNav items={navItems} active={active} />
           </div>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center print:hidden">
@@ -168,231 +196,118 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
   );
 }
 
-/** Renders paragraphs separated by blank lines, with **bold** support. No HTML injection. */
-function Prose({ text }: { text: string }) {
-  return (
-    <div className="space-y-4 font-read text-[1.05rem] leading-relaxed text-violet-100 print-dark">
-      {text.split(/\n\s*\n/).map((para, i) => (
-        <p key={i}>{bold(para.trim())}</p>
-      ))}
-    </div>
-  );
+const lineColor = (lines?: LineKey[]) => (lines?.[0] ? LINE_COLORS[lines[0]] : undefined);
+
+// ---------- Life at a glance ----------
+
+const DISCLAIMER =
+  'These answers are traditional palmistry interpretations of the lines in your photos. They describe tendencies and possibilities, not facts or guarantees about your future.';
+
+function countLabel(range: string, one: string, many: string) {
+  return range.trim() === '1' ? one : many;
 }
 
-function bold(s: string): ReactNode {
-  return s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith('**') && part.endsWith('**') ? (
-      <strong key={i} className="font-bold text-white print-dark">{part.slice(2, -2)}</strong>
-    ) : (
-      <Fragment key={i}>{part.replace(/\*/g, '')}</Fragment>
-    ),
-  );
+interface GlanceCardData {
+  key: string;
+  topic: Curious | 'life_path';
+  icon: LucideIcon;
+  label: string;
+  /** Big number cards (marriages, children) vs. short answer cards. */
+  big?: string;
+  answer: string;
+  detail: string;
+  seen?: Seen;
+  color?: string;
+  href?: string;
 }
 
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+function LifeAtAGlance({
+  glance,
+  family,
+  curious,
+  sectionIds,
+}: {
+  glance: NonNullable<Reading['glance']>;
+  family: Reading['family'];
+  curious?: Curious;
+  sectionIds: string[];
+}) {
+  const has = (id: string) => sectionIds.includes(id);
+  const familyHref = has('marriage_family') ? '#s-marriage_family' : undefined;
+  const careerSection = ['career', 'strengths', 'work_style'].find(has);
 
-function Dot({ color, className = '' }: { color?: string; className?: string }) {
-  return <span aria-hidden className={`inline-block size-2 shrink-0 rounded-full ${className}`} style={{ background: color ?? 'var(--color-gold-400)' }} />;
-}
+  const fromItem = (g: GlanceItem) => ({ answer: g.answer, detail: g.detail, seen: g.visibility, color: g.line !== 'none' ? LINE_COLORS[g.line] : undefined });
+  const fromFamily = (p: FamilyPrediction | undefined, one: string, many: string): Pick<GlanceCardData, 'big' | 'answer' | 'detail' | 'seen'> =>
+    p
+      ? p.range.trim() === '?' || p.visibility === 'not_assessable'
+        ? { answer: 'Can’t read from these photos', detail: 'The lines were too fine to see clearly.', seen: 'not_assessable' }
+        : { big: p.range, answer: countLabel(p.range, one, many), detail: `${p.confidence} confidence`, seen: p.visibility }
+      : { answer: 'Not included', detail: 'Needs a photo of the side of your hand. Start a new reading to add it.' };
 
-interface HandPick {
-  mode: string;
-  observations: PersonObservation[];
-  dominantHands?: Hand[];
-  personName: (i: number) => string;
-  person: number;
-  side: Hand;
-  setPerson: (i: number) => void;
-  setSide: (h: Hand) => void;
-}
-
-/** Person (couples only) and Left/Right choice. Drives every hand diagram on the page. */
-function HandPicker({ pick, vertical = false, compact = false }: { pick: HandPick; vertical?: boolean; compact?: boolean }) {
-  const hands = pick.observations[pick.person]?.hands ?? [];
-  const dominant = pick.dominantHands?.[pick.person];
-  return (
-    <div className={`flex gap-2 ${vertical ? 'flex-col items-stretch' : 'items-center'}`}>
-      {pick.mode === 'couple' && (
-        <Segmented
-          label="Person"
-          value={String(pick.person)}
-          options={pick.observations.map((_, i) => ({ value: String(i), label: compact ? pick.personName(i).slice(0, 1) : pick.personName(i) }))}
-          onChange={(v) => pick.setPerson(Number(v))}
-          vertical={vertical}
-        />
-      )}
-      <Segmented
-        label="Hand"
-        value={pick.side}
-        options={hands.map((h) => ({
-          value: h.hand,
-          label: compact ? cap(h.hand).slice(0, 1) : `${cap(h.hand)}${h.hand === dominant ? ' · dominant' : ''}`,
-        }))}
-        onChange={(v) => pick.setSide(v as Hand)}
-        vertical={vertical}
-      />
-    </div>
-  );
-}
-
-/** "What we saw": a drawn diagram of the chosen hand next to its photo, with a legend of the lines. */
-function HandsHero({ pick, hand, photos }: { pick: HandPick; hand?: HandObservation; photos?: ResultPhoto[] }) {
-  const [active, setActive] = useState<LineKey | null>(null);
-  useEffect(() => setActive(null), [hand]);
-  if (!hand) return null;
-
-  const dominant = pick.dominantHands?.[pick.person];
-  const who = pick.mode === 'couple' ? `${pick.personName(pick.person)}: ` : '';
-  const role = `${who}${cap(hand.hand)} hand${dominant ? (hand.hand === dominant ? ' · dominant, what you’ve built' : ' · non-dominant, what you were born with') : ''}`;
-  const photo = photos?.find((p) => p.slot === `p${pick.person}-${hand.hand}-palm`);
-
-  const shape = [
-    hand.element !== 'unclear' ? `${cap(hand.element)} hand` : '',
-    hand.palm_shape !== 'unclear' ? `${hand.palm_shape} palm` : '',
-    hand.finger_length !== 'unclear' ? `${hand.finger_length} fingers` : '',
-    hand.index_vs_ring === 'index_longer' ? 'index finger longer than ring' : hand.index_vs_ring === 'ring_longer' ? 'ring finger longer than index' : '',
-  ].filter(Boolean);
+  const cards: GlanceCardData[] = [
+    { key: 'marriage', topic: 'marriage', icon: HeartHandshake, label: 'Marriage', href: familyHref, ...fromFamily(family?.marriages, 'Marriage', 'Marriages') },
+    { key: 'children', topic: 'children', icon: Baby, label: 'Children', href: familyHref, ...fromFamily(family?.children, 'Child', 'Children') },
+    { key: 'career', topic: 'career', icon: Briefcase, label: 'Career', href: careerSection ? `#s-${careerSection}` : undefined, ...fromItem(glance.career) },
+    { key: 'money', topic: 'money', icon: Wallet, label: 'Money', href: has('money') ? '#s-money' : undefined, ...fromItem(glance.money) },
+    { key: 'turning', topic: 'life_changes', icon: Milestone, label: 'Biggest turning point', href: '#s-timeline', ...fromItem(glance.turning_point) },
+    { key: 'path', topic: 'life_path', icon: Compass, label: 'Life path', href: has('potential_vs_path') ? '#s-potential_vs_path' : undefined, ...fromItem(glance.life_path) },
+  ];
+  const ordered = curious ? [...cards.filter((c) => c.topic === curious), ...cards.filter((c) => c.topic !== curious)] : cards;
 
   return (
-    <section id="s-hands" className="panel mb-8 scroll-mt-6 overflow-hidden" aria-labelledby="hands-title">
-      <div className="px-5 pt-5 sm:px-8 sm:pt-7">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">What we saw</p>
-        <h2 id="hands-title" className="font-display text-2xl text-white print-dark">Your hands</h2>
-        <p className="mt-1 text-sm text-violet-200/90 print-dark">
-          {role}
-          <span className="text-violet-300/60 print:hidden"> · switch hands with the <span className="lg:hidden">buttons at the bottom</span><span className="hidden lg:inline">panel on the left</span></span>
-        </p>
-      </div>
-
-      <div className="grid gap-5 p-5 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] sm:p-8">
-        <div>
-          <div className={`grid gap-3 ${photo ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {photo && (
-              <figure>
-                <a href={photo.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-night-900">
-                  <img src={photo.url} alt={`Your ${hand.hand} palm`} className="aspect-[22/29] w-full object-cover" />
+    <section id="s-glance" className="mb-8 scroll-mt-6" aria-labelledby="glance-title">
+      <h2 id="glance-title" className="mb-1 font-display text-2xl text-white print-dark">Your life at a glance</h2>
+      <p className="mb-4 text-sm text-violet-300/80 print-muted">Tap a card to see how we read it.</p>
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {ordered.map((c) => {
+          const asked = c.topic === curious;
+          const Body = (
+            <>
+              <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                <span className="flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-violet-300/90 print-muted">
+                  <c.icon size={14} className="text-gold-400" /> {c.label}
+                </span>
+                {asked && <span className="whitespace-nowrap rounded-full bg-gold-400 px-2 py-0.5 text-[0.65rem] font-bold text-night-900">You asked</span>}
+              </span>
+              {c.big ? (
+                <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-white print-dark">
+                  <span className="whitespace-nowrap font-display text-4xl leading-none sm:text-5xl">{c.big}</span>
+                  <span className="font-display text-lg">{c.answer}</span>
+                </span>
+              ) : (
+                <span className={`mt-2 block font-display leading-snug text-white print-dark ${c.seen ? 'text-lg' : 'text-base text-violet-200/80'}`}>{c.answer}</span>
+              )}
+              <span className="mt-1 flex items-start gap-1.5 text-xs leading-snug text-violet-300/80 print-muted">
+                {c.color && <Dot color={c.color} className="mt-1" />} {c.detail}
+              </span>
+              {c.seen && <SeenLabel seen={c.seen} className="mt-auto pt-2" />}
+            </>
+          );
+          const cls = `panel flex h-full flex-col px-4 py-3.5 transition ${asked ? 'border-gold-400/70 bg-gold-400/[0.06]' : ''} ${
+            c.href ? 'hover:border-white/25' : ''
+          }`;
+          return (
+            <li key={c.key}>
+              {c.href ? (
+                <a href={c.href} onClick={(e) => jump(e, c.href!.slice(1))} className={cls}>
+                  {Body}
                 </a>
-                <figcaption className="mt-1.5 text-center text-xs text-violet-300/70">Your photo</figcaption>
-              </figure>
-            )}
-            <figure className={photo ? '' : 'mx-auto w-full max-w-[15rem]'}>
-              <div className="rounded-xl bg-night-950/60">
-                <HandDiagram hand={hand} highlight={active ? [active] : undefined} className="w-full" />
-              </div>
-              <figcaption className="mt-1.5 text-center text-xs text-violet-300/70">The lines we read</figcaption>
-            </figure>
-          </div>
-          {shape.length > 0 && <p className="mt-3 text-center text-sm text-violet-300/80 print-muted">{shape.join(' · ')}</p>}
-        </div>
-
-        <div>
-          <ul className="space-y-1.5">
-            {LINE_KEYS.map((k) => {
-              const words = lineWords(hand.lines[k]);
-              const seen = words.length > 0;
-              const on = active === k;
-              return (
-                <li key={k}>
-                  <button
-                    type="button"
-                    disabled={!seen}
-                    onClick={() => setActive(on ? null : k)}
-                    aria-pressed={on}
-                    className={`flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left transition ${
-                      on ? 'bg-white/10' : seen ? 'hover:bg-white/5' : 'cursor-default opacity-45'
-                    }`}
-                  >
-                    <Dot color={seen ? LINE_COLORS[k] : 'rgb(255 255 255 / 0.25)'} className="mt-1.5 size-2.5" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-white print-dark">
-                        {LINE_NAMES[k]} <span className="font-normal text-violet-300/70">· {LINE_MEANINGS[k]}</span>
-                      </span>
-                      <span className="block text-sm text-violet-200/90 print-muted">
-                        {seen ? words.join(' · ') : 'Not visible in this photo'}
-                        {seen && hand.lines[k].features.length > 0 && <span className="text-violet-300/70"> · {hand.lines[k].features.join(', ')}</span>}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-3 px-3 text-xs leading-relaxed text-violet-300/60 print:hidden">
-            Tap a line to find it on the diagram. The diagram is drawn from what we observed, not traced from your photo.
-          </p>
-        </div>
-      </div>
-
-      <HandDetails hand={hand} />
+              ) : (
+                <div className={cls}>{Body}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-xs leading-relaxed text-violet-300/70 print-muted">{DISCLAIMER}</p>
     </section>
   );
 }
 
-function HandDetails({ hand }: { hand: HandObservation }) {
-  const [open, setOpen] = useState(false);
-  const mounts = hand.mounts.filter((m) => m.prominence === 'prominent' || m.prominence === 'flat');
-  const items = [
-    hand.thumb && `Thumb: ${hand.thumb}`,
-    ...mounts.map((m) => `${cap(m.mount)} mount: ${m.prominence}`),
-    ...hand.markings.map((m) => `${cap(m.marking)} ${m.location}`),
-    hand.relationship_lines.length > 0 &&
-      `Relationship lines: ${hand.relationship_lines.map((r) => `${r.length}, ${r.depth} (${r.position})`).join('; ')}`,
-    hand.children_lines_visible > 0 && `Fine vertical lines above them: ${hand.children_lines_visible}`,
-    hand.notes,
-  ].filter(Boolean) as string[];
-  if (items.length === 0) return null;
+/** Older solo readings and couples readings: named traits instead of life answers. */
+function AtAGlance({ traits }: { traits: NonNullable<Reading['traits']> }) {
   return (
-    <div className="border-t border-white/5 print:hidden">
-      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between px-5 py-3.5 text-left text-sm font-bold text-violet-200 sm:px-8">
-        More about this hand <ChevronDown size={18} className={`transition ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <ul className="space-y-1.5 px-5 pb-5 text-sm text-violet-100 sm:px-8">
-          {items.map((t) => (
-            <li key={t}>{t}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function Segmented({
-  label,
-  value,
-  options,
-  onChange,
-  vertical = false,
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onChange: (v: string) => void;
-  vertical?: boolean;
-}) {
-  if (options.length < 2) return null;
-  return (
-    <div role="radiogroup" aria-label={label} className={`inline-flex rounded-xl border border-white/10 bg-night-900/60 p-1 ${vertical ? 'flex-col' : ''}`}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          role="radio"
-          aria-checked={o.value === value}
-          onClick={() => onChange(o.value)}
-          className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold transition ${vertical ? 'text-left' : ''} ${
-            o.value === value ? 'bg-gold-400 text-night-900' : 'text-violet-200 hover:text-white'
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function AtAGlance({ traits }: { traits: Reading['traits'] }) {
-  return (
-    <section id="s-glance" className="mb-10 scroll-mt-6" aria-labelledby="glance-title">
+    <section id="s-glance" className="mb-8 scroll-mt-6" aria-labelledby="glance-title">
       <h2 id="glance-title" className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">At a glance</h2>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {traits.map((t) => {
@@ -400,9 +315,7 @@ function AtAGlance({ traits }: { traits: Reading['traits'] }) {
           return (
             <li key={t.label} className="panel relative overflow-hidden px-4 py-3.5">
               <span aria-hidden className="absolute inset-y-0 left-0 w-1" style={{ background: color ?? 'rgb(254 200 120 / 0.5)' }} />
-              <span className="flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-violet-300/80 print-muted">
-                {t.label}
-              </span>
+              <span className="text-[0.7rem] font-bold uppercase tracking-wider text-violet-300/80 print-muted">{t.label}</span>
               <span className="mt-1 block font-display text-lg leading-snug text-white print-dark">{t.value}</span>
               {t.line && t.line !== 'none' && (
                 <span className="mt-1 flex items-center gap-1.5 text-xs text-violet-300/60 print-muted">
@@ -417,11 +330,97 @@ function AtAGlance({ traits }: { traits: Reading['traits'] }) {
   );
 }
 
-function SectionCard({ section: s, hand }: { section: ReadingSection; hand?: HandObservation }) {
+/** Couples and older readings: big marriage and children numbers under the traits. */
+function FamilyCards({ family }: { family: NonNullable<Reading['family']> }) {
+  return (
+    <div className="mb-8 grid grid-cols-2 gap-3">
+      {(
+        [
+          [HeartHandshake, 'Marriage', family.marriages, 'Marriage', 'Marriages'],
+          [Baby, 'Children', family.children, 'Child', 'Children'],
+        ] as const
+      ).map(([Icon, label, p, one, many]) => (
+        <a key={label} href="#s-family" onClick={(e) => jump(e, 's-family')} className="panel block px-4 py-3.5 hover:border-white/25">
+          <span className="flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-wider text-violet-300/90">
+            <Icon size={14} className="text-gold-400" /> {label}
+          </span>
+          <span className="mt-2 flex flex-wrap items-baseline gap-x-2 text-white print-dark">
+            <span className="whitespace-nowrap font-display text-4xl leading-none">{p.range}</span>
+            <span className="font-display text-lg">{countLabel(p.range, one, many)}</span>
+          </span>
+          {p.visibility && <SeenLabel seen={p.visibility} className="mt-2" />}
+        </a>
+      ))}
+      <p className="col-span-2 text-xs leading-relaxed text-violet-300/70 print-muted">{DISCLAIMER}</p>
+    </div>
+  );
+}
+
+// ---------- Timeline ----------
+
+const AREA_LABELS = { love: 'Love', career: 'Career', life: 'Life' } as const;
+
+function LifeTimeline({ entries }: { entries: NonNullable<Reading['timeline']> }) {
+  return (
+    <section id="s-timeline" className="panel mb-5 scroll-mt-6 p-6 sm:p-8" aria-labelledby="timeline-title">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-gold-400 print-muted">
+        <Milestone size={15} /> Turning points
+      </p>
+      <h2 id="timeline-title" className="mt-2 font-display text-2xl text-white sm:text-3xl print-dark">Your life timeline</h2>
+      <ol className="mt-6">
+        {entries.map((e, i) => {
+          const color = e.line !== 'none' ? LINE_COLORS[e.line] : 'var(--color-gold-400)';
+          const last = i === entries.length - 1;
+          return (
+            <li key={i} className="relative flex gap-4 pb-6 last:pb-0">
+              {!last && <span aria-hidden className="absolute left-[0.6875rem] top-7 bottom-0 w-px bg-white/15" />}
+              <span
+                aria-hidden
+                className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-2 bg-night-900"
+                style={{ borderColor: color }}
+              >
+                <span className="size-2 rounded-full" style={{ background: color }} />
+              </span>
+              <div className="min-w-0">
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-bold text-gold-400 print-dark">{e.when}</span>
+                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[0.7rem] font-bold text-violet-300/90">{AREA_LABELS[e.area]}</span>
+                  {e.timing === 'unclear' && <span className="text-xs text-violet-300/60">Timing unclear</span>}
+                </p>
+                <p className="mt-0.5 font-display text-lg text-white print-dark">{e.title}</p>
+                <p className="mt-1 font-read leading-relaxed text-violet-100 print-dark">{e.detail}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-6 text-xs leading-relaxed text-violet-300/70 print-muted">
+        Ages come from the traditional palmistry timing scale and are approximate and symbolic, not forecasts.
+      </p>
+    </section>
+  );
+}
+
+// ---------- Sections ----------
+
+function SectionCard({
+  section: s,
+  hands,
+  asked,
+  careerPaths,
+  family,
+}: {
+  section: ReadingSection;
+  hands: HandObservation[];
+  asked?: boolean;
+  careerPaths?: string[];
+  family?: Reading['family'];
+}) {
   const Icon = ICONS[s.id] ?? Sparkles;
   const lines = s.lines ?? [];
   return (
-    <section id={`s-${s.id}`} className="panel scroll-mt-6 p-6 sm:p-8">
+    <section id={`s-${s.id}`} className={`panel scroll-mt-6 p-6 sm:p-8 ${asked ? 'border-gold-400/60' : ''}`}>
+      {asked && <p className="mb-3 inline-block rounded-full bg-gold-400 px-2.5 py-0.5 text-xs font-bold text-night-900">You asked about this</p>}
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1">
           {s.name ? (
@@ -445,8 +444,21 @@ function SectionCard({ section: s, hand }: { section: ReadingSection; hand?: Han
             </ul>
           )}
         </div>
-        {hand && lines.length > 0 && (
-          <HandDiagram hand={hand} highlight={lines} mini className="w-16 shrink-0 sm:w-20" title={`Hand diagram highlighting the ${lines.map((l) => LINE_NAMES[l].toLowerCase()).join(' and ')}`} />
+        {lines.length > 0 && hands.length > 0 && (
+          <div className="flex shrink-0 gap-1">
+            {hands.map((h) => (
+              <figure key={h.hand} className="text-center">
+                <HandDiagram
+                  hand={h}
+                  highlight={lines}
+                  mini
+                  className={hands.length > 1 ? 'w-12 sm:w-16' : 'w-16 sm:w-20'}
+                  title={`${h.hand} hand diagram highlighting the ${lines.map((l) => LINE_NAMES[l].toLowerCase()).join(' and ')}`}
+                />
+                {hands.length > 1 && <figcaption className="text-[0.65rem] text-violet-300/60">{h.hand === 'left' ? 'Left' : 'Right'}</figcaption>}
+              </figure>
+            ))}
+          </div>
         )}
       </div>
 
@@ -459,21 +471,120 @@ function SectionCard({ section: s, hand }: { section: ReadingSection; hand?: Han
         </p>
       )}
 
+      {family && (
+        <div className="mt-5">
+          <FamilyDetails family={family} />
+        </div>
+      )}
+
       <div className="mt-5">
         <Prose text={s.body} />
       </div>
 
+      {careerPaths && careerPaths.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-violet-300/60 print-muted">Paths that fit</p>
+          <ul className="flex flex-wrap gap-2">
+            {careerPaths.map((c) => (
+              <li key={c} className="rounded-xl border border-gold-400/30 bg-gold-400/[0.06] px-3 py-1.5 text-sm font-bold text-white print-dark">{c}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {s.tension && (
+        <div className="mt-5 rounded-xl border-l-2 border-gold-400/60 bg-white/[0.03] px-4 py-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-gold-400 print-muted">The other side</p>
+          <p className="mt-1 font-read leading-relaxed text-violet-100 print-dark">{s.tension}</p>
+        </div>
+      )}
+
       {s.evidence.length > 0 && (
         <div className="mt-5 flex flex-wrap gap-2 border-t border-white/5 pt-4">
           <span className="text-xs font-bold uppercase tracking-wider text-violet-300/60 print-muted">Based on</span>
-          {s.evidence.map((e) => (
-            <span key={e} className="rounded-full bg-white/5 px-3 py-1 text-xs text-violet-200 print-muted">{e}</span>
-          ))}
+          {s.evidence.map((e) => {
+            const text = typeof e === 'string' ? e : e.text;
+            const faint = typeof e !== 'string' && e.visibility === 'faint';
+            return (
+              <span key={text} className="rounded-full bg-white/5 px-3 py-1 text-xs text-violet-200 print-muted">
+                {text}
+                {faint && <span className="text-gold-400/80"> · faint</span>}
+              </span>
+            );
+          })}
         </div>
       )}
     </section>
   );
 }
+
+function FamilyDetails({ family }: { family: NonNullable<Reading['family']> }) {
+  return (
+    <div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Prediction icon={HeartHandshake} label="Significant marriages / partnerships" p={family.marriages} one="Marriage" many="Marriages" />
+        <Prediction icon={Baby} label="Potential children" p={family.children} one="Child" many="Children" />
+      </div>
+      <p className="mt-4 font-read leading-relaxed text-violet-100 print-dark">{family.timing}</p>
+      <p className="mt-3 text-xs italic leading-relaxed text-violet-300/60 print-muted">
+        These numbers come from the relationship and children lines on the edge of your palm, as traditional palmistry reads them. They are not
+        predictions of how many marriages or children you will have, and family comes in many forms.
+      </p>
+    </div>
+  );
+}
+
+function Prediction({ icon: Icon, label, p, one, many }: { icon: LucideIcon; label: string; p: FamilyPrediction; one: string; many: string }) {
+  const unreadable = p.range.trim() === '?' || p.visibility === 'not_assessable';
+  return (
+    <div className="rounded-xl bg-white/[0.04] p-5 text-center">
+      <Icon size={22} className="mx-auto mb-2 text-gold-400" />
+      <p className="text-xs font-bold uppercase tracking-wider text-violet-300/80 print-muted">{label}</p>
+      {unreadable ? (
+        <p className="my-2 font-display text-lg text-violet-200 print-dark">Can’t read from these photos</p>
+      ) : (
+        <p className="my-1 flex flex-wrap items-baseline justify-center gap-x-2 text-white print-dark">
+          <span className="whitespace-nowrap font-display text-4xl">{p.range}</span>
+          <span className="font-display text-lg">{countLabel(p.range, one, many)}</span>
+        </p>
+      )}
+      <p className="mb-3 flex flex-wrap items-center justify-center gap-x-3 text-xs text-violet-300/70 print-muted">
+        {!unreadable && <span>{p.confidence} confidence</span>}
+        {p.visibility && <SeenLabel seen={p.visibility} />}
+      </p>
+      <p className="text-left text-sm leading-relaxed text-violet-100 print-dark">{p.explanation}</p>
+    </div>
+  );
+}
+
+function Reflection({ steps }: { steps: string[] }) {
+  const [open, setOpen] = useState(false);
+  if (steps.length === 0) return null;
+  return (
+    <section id="s-reflection" className="panel scroll-mt-6 overflow-hidden">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 p-5 text-left sm:px-8 print:hidden">
+        <span className="flex items-center gap-3">
+          <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Target size={18} /></span>
+          <span>
+            <span className="block font-display text-lg text-white">Personal reflection</span>
+            <span className="block text-sm text-violet-300/70">Optional: {steps.length} small things to try in the next two weeks</span>
+          </span>
+        </span>
+        <ChevronDown className={`shrink-0 text-violet-300 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <ol className={`space-y-3 px-5 pb-6 sm:px-8 ${open ? '' : 'hidden print:block'}`}>
+        {steps.map((a, i) => (
+          <li key={a} className="flex gap-3 text-violet-100 print-dark">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-night-900">{i + 1}</span>
+            <span className="pt-0.5 leading-relaxed">{a}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+// ---------- Navigation ----------
 
 interface NavItem {
   id: string;
@@ -512,7 +623,7 @@ function jump(e: MouseEvent, id: string) {
 function SideNav({ items, active }: { items: NavItem[]; active?: string }) {
   return (
     <nav aria-label="Reading sections">
-      <p className="mb-2 px-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400">Sections</p>
+      <p className="mb-2 px-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400">Your reading</p>
       <ul className="space-y-0.5">
         {items.map((i) => (
           <li key={i.id}>
@@ -534,8 +645,8 @@ function SideNav({ items, active }: { items: NavItem[]; active?: string }) {
   );
 }
 
-/** Phone and tablet: hand picker and section shortcuts that stay at the bottom of the screen. */
-function BottomNav({ items, active, pick }: { items: NavItem[]; active?: string; pick: HandPick }) {
+/** Phone and tablet: section shortcuts that stay at the bottom of the screen. */
+function BottomNav({ items, active }: { items: NavItem[]; active?: string }) {
   const bar = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = bar.current?.querySelector<HTMLElement>(`[data-id="${active}"]`);
@@ -544,216 +655,26 @@ function BottomNav({ items, active, pick }: { items: NavItem[]; active?: string;
 
   return (
     <nav aria-label="Reading sections" className="sticky bottom-3 z-20 mt-6 lg:hidden print:hidden">
-      <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-night-900/90 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-md">
-        <div className="shrink-0 [&_button]:px-2.5 [&_button]:py-1 [&_button]:text-xs">
-          <HandPicker pick={pick} compact />
-        </div>
-        <div ref={bar} className="flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {items.map((i) => (
-            <a
-              key={i.id}
-              href={`#${i.id}`}
-              data-id={i.id}
-              aria-current={active === i.id ? 'true' : undefined}
-              onClick={(e) => jump(e, i.id)}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition ${
-                active === i.id ? 'bg-white/12 text-white' : 'text-violet-300/80 hover:text-white'
-              }`}
-            >
-              {i.color && <Dot color={i.color} />}
-              {i.label}
-            </a>
-          ))}
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-function FamilyPanel({ family }: { family: NonNullable<Reading['family']> }) {
-  return (
-    <section id="s-family" className="panel scroll-mt-6 p-6 sm:p-8">
-      <h2 className="mb-5 flex items-center gap-3 font-display text-xl text-white print-dark">
-        <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Baby size={20} /></span> Marriage & Family
-      </h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Prediction icon={HeartHandshake} label="Significant marriages / partnerships" p={family.marriages} />
-        <Prediction icon={Baby} label="Potential children" p={family.children} />
-      </div>
-      <p className="mt-5 leading-relaxed text-violet-100 print-dark">{family.timing}</p>
-      <p className="mt-4 text-xs italic text-violet-300/60 print-muted">
-        Palmistry shows tendencies and potential, not certainties. Family comes in many forms.
-      </p>
-    </section>
-  );
-}
-
-function Prediction({ icon: Icon, label, p }: { icon: LucideIcon; label: string; p: FamilyPrediction }) {
-  return (
-    <div className="rounded-xl bg-white/[0.04] p-5 text-center">
-      <Icon size={22} className="mx-auto mb-2 text-gold-400" />
-      <p className="text-xs font-bold uppercase tracking-wider text-violet-300/80 print-muted">{label}</p>
-      <p className="my-1 font-display text-4xl text-white print-dark">{p.range}</p>
-      <p className="mb-3 text-xs text-violet-300/70 print-muted">{p.confidence} confidence</p>
-      <p className="text-left text-sm leading-relaxed text-violet-100 print-dark">{p.explanation}</p>
-    </div>
-  );
-}
-
-function FeedbackBox({ mode, focus, readingId }: { mode: string; focus: string; readingId?: string }) {
-  const [rating, setRating] = useState<1 | -1 | null>(null);
-  const [comment, setComment] = useState('');
-  const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
-
-  async function submit() {
-    if (!rating) return;
-    setState('sending');
-    await sendFeedback({ rating, comment, mode, focus, readingId }).catch(() => {});
-    setState('sent');
-  }
-
-  if (state === 'sent') {
-    return <p className="panel mx-auto mt-12 max-w-lg p-6 text-center text-violet-100 print:hidden">Thank you! Your feedback helps us improve.</p>;
-  }
-  return (
-    <div className="panel mx-auto mt-12 max-w-lg p-6 text-center print:hidden">
-      <h2 className="font-display text-lg text-white">Did this reading resonate?</h2>
-      <div className="mt-4 flex justify-center gap-3">
-        {([
-          [1, ThumbsUp, 'Spot on'],
-          [-1, ThumbsDown, 'Off base'],
-        ] as const).map(([v, Icon, label]) => (
-          <button
-            key={v}
-            onClick={() => setRating(v)}
-            aria-pressed={rating === v}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-semibold transition ${
-              rating === v ? 'border-gold-400 bg-gold-400/15 text-white' : 'border-white/10 text-violet-200 hover:border-white/30'
+      <div
+        ref={bar}
+        className="flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-night-900/90 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {items.map((i) => (
+          <a
+            key={i.id}
+            href={`#${i.id}`}
+            data-id={i.id}
+            aria-current={active === i.id ? 'true' : undefined}
+            onClick={(e) => jump(e, i.id)}
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition ${
+              active === i.id ? 'bg-white/12 text-white' : 'text-violet-300/80 hover:text-white'
             }`}
           >
-            <Icon size={18} /> {label}
-          </button>
+            {i.color && <Dot color={i.color} />}
+            {i.label}
+          </a>
         ))}
       </div>
-      {rating !== null && (
-        <div className="mt-4 space-y-3">
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            maxLength={2000}
-            placeholder="What resonated, or what felt off? (optional)"
-            className="min-h-24 w-full rounded-xl border border-white/10 bg-night-900/70 p-3 text-sm text-white placeholder:text-violet-300/40 focus:border-gold-400 focus:outline-none"
-          />
-          <Button onClick={submit} disabled={state === 'sending'} className="w-full">
-            {state === 'sending' ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} Send feedback
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PrivateLink() {
-  const [copied, setCopied] = useState(false);
-  const url = window.location.href.split('?')[0];
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      window.prompt('Copy your private link:', url);
-    }
-  }
-  return (
-    <section className="panel mb-8 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between print:hidden">
-      <div className="flex items-start gap-3">
-        <Link2 size={20} className="mt-0.5 shrink-0 text-gold-400" />
-        <div>
-          <p className="font-bold text-white">This is your private link</p>
-          <p className="text-sm text-violet-200/80">Bookmark it to come back anytime. Anyone with the link can see this reading and its photos.</p>
-        </div>
-      </div>
-      <Button variant="secondary" onClick={copy} className="shrink-0">
-        {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? 'Copied' : 'Copy link'}
-      </Button>
-    </section>
-  );
-}
-
-function PhotoStrip({ photos }: { photos: ResultPhoto[] }) {
-  return (
-    <section className="mb-5">
-      <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">Photos used for this reading</p>
-      <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-        {photos.map((p) => (
-          <li key={p.slot}>
-            <a href={p.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 hover:border-gold-400/60">
-              <img src={p.url} alt={p.label} loading="lazy" className="aspect-[4/5] w-full object-cover" />
-            </a>
-            <span className="mt-1 block text-center text-xs text-violet-300/80 print-muted">{p.label}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function DeleteBox({ onDelete }: { onDelete: () => Promise<void> }) {
-  const [state, setState] = useState<'idle' | 'confirm' | 'deleting' | 'error'>('idle');
-  async function run() {
-    setState('deleting');
-    try {
-      await onDelete();
-    } catch {
-      setState('error');
-    }
-  }
-  return (
-    <div className="mx-auto mt-8 max-w-lg text-center print:hidden">
-      {state === 'idle' ? (
-        <button onClick={() => setState('confirm')} className="inline-flex items-center gap-2 text-sm text-violet-300/70 underline hover:text-red-300">
-          <Trash2 size={15} /> Delete this reading and its photos
-        </button>
-      ) : (
-        <div className="panel border-red-400/30 p-5">
-          <p className="font-bold text-white">Delete this reading permanently?</p>
-          <p className="mt-1 text-sm text-violet-200/80">Your reading and photos will be erased and this link will stop working. This can’t be undone.</p>
-          {state === 'error' && <p className="mt-2 text-sm text-red-300">Something went wrong. Please try again.</p>}
-          <div className="mt-4 flex justify-center gap-3">
-            <Button variant="secondary" onClick={() => setState('idle')} disabled={state === 'deleting'}>Keep it</Button>
-            <Button onClick={run} disabled={state === 'deleting'} className="!bg-red-500 !text-white hover:!bg-red-400">
-              {state === 'deleting' ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />} Delete
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MarketingToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => Promise<void> }) {
-  const [checked, setChecked] = useState(value);
-  const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  async function toggle(v: boolean) {
-    setChecked(v);
-    setState('saving');
-    try {
-      await onChange(v);
-      setState('saved');
-    } catch {
-      setChecked(!v);
-      setState('error');
-    }
-  }
-  return (
-    <label className="mb-8 flex cursor-pointer items-start gap-3 text-sm text-violet-200/90 print:hidden">
-      <input type="checkbox" className="mt-0.5 size-5 accent-gold-400" checked={checked} disabled={state === 'saving'} onChange={(e) => toggle(e.target.checked)} />
-      <span>
-        Palm Readings AI may use these palm photos in its marketing (never with your name).
-        {state === 'saved' && <span className="ml-2 font-bold text-gold-400">Saved</span>}
-        {state === 'error' && <span className="ml-2 font-bold text-red-300">Couldn’t save, please try again</span>}
-      </span>
-    </label>
+    </nav>
   );
 }

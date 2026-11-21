@@ -78,43 +78,97 @@ export const observationSchema: Schema = obj({
   overall_confidence: enumOf(['high', 'medium', 'low']),
 });
 
-const prediction = obj({
-  range: str('A small range or count, e.g. "1–2" or "2".'),
-  confidence: enumOf(['high', 'medium', 'low']),
-  explanation: str('Which lines this is based on, in warm plain language.'),
-});
+const seen = (description: string) => enumOf(['clear', 'faint', 'not_assessable'], description);
+const lineRef = (description: string) => enumOf([...LINE_KEYS, 'none'], description);
 
-export function readingSchema(sectionIds: string[], includeFamily: boolean): Schema {
+const prediction = (what: string) =>
+  obj({
+    range: str(`The number of ${what} as a single number or a small range, e.g. "2" or "1–2". "?" only when visibility is "not_assessable".`),
+    confidence: enumOf(['high', 'medium', 'low']),
+    visibility: seen('How clearly the lines this is read from could be seen in the photos.'),
+    explanation: str('Which lines this is based on and what each one suggests, in warm plain language (2–3 sentences).'),
+  });
+
+const glanceItem = (description: string) =>
+  obj(
+    {
+      answer: str('A direct 1–4 word answer, e.g. "Creative leadership", "Self-built wealth", "Early 30s". Not a vague theme.'),
+      detail: str('One short line on what it is based on, e.g. "Fate line strengthens from mid-palm".'),
+      line: lineRef('The line this answer mainly comes from; "none" for hand shape, fingers, thumb or mounts.'),
+      visibility: seen('How clearly the features behind this answer could be seen. "not_assessable" if they could not be read; then say so in answer.'),
+    },
+    description,
+  );
+
+export function readingSchema(sectionIds: string[], includeFamily: boolean, mode: 'solo' | 'couple'): Schema {
   const properties: Record<string, Schema> = {
     headline: str('One evocative line (max ~12 words) capturing the essence of the reading.'),
-    summary: str('An opening paragraph (3–5 sentences) that is specific to these hands.'),
-    traits: arr(
-      obj({
-        label: str('A category, e.g. "Element", "Emotional type", "Thinking style", "Work style", "Superpower".'),
-        value: str('A memorable 1–4 word answer specific to these hands, e.g. "The Quiet Strategist". Not a generic adjective.'),
-        line: enumOf([...LINE_KEYS, 'none'], 'The line this trait mostly comes from; "none" for hand shape, fingers, thumb or mounts.'),
-      }),
-      '4 to 6 at-a-glance traits, each from a different part of the hand.',
-    ),
-    sections: arr(
-      obj({
-        id: enumOf(sectionIds),
-        title: str('The section title exactly as given.'),
-        name: str('A short, memorable name (2–4 words) for what this section found, e.g. "The Steady Anchor" or "Late-Blooming Leader". Specific to these hands; never reuse a name across sections.'),
-        tags: arr(str('One or two words, e.g. "Loyal", "Slow to trust".'), '2 or 3 qualities that sum up this section.'),
-        lines: arr(enumOf([...LINE_KEYS]), 'The 1–3 lines this section is mainly read from. Only lines that were visible. Empty if it rests on hand shape, fingers or mounts only.'),
-        body: str('2–3 short paragraphs (each 2–4 sentences) separated by blank lines. **bold** allowed. No headings. No filler that would fit anyone.'),
-        evidence: arr(str(), '1–4 short notes of the observed features this section is based on, e.g. "Curved heart line ending under the index finger".'),
-      }),
-      'Exactly the requested sections, in the requested order.',
-    ),
-    action_steps: arr(str(), '3 concrete, doable actions for the next two weeks.'),
-    closing: obj({ kind: enumOf(['mantra', 'reflection']), text: str() }),
+    summary: str('An opening paragraph (3–5 sentences) that is specific to these hands. Combine both hands; this is the main reading.'),
   };
+  if (mode === 'solo') {
+    properties.glance = obj(
+      {
+        career: glanceItem('The kind of career that fits best.'),
+        money: glanceItem('How money and success tend to come.'),
+        turning_point: glanceItem('The biggest turning point and roughly when (match the timeline).'),
+        life_path: glanceItem('The overall shape of their path, e.g. "Self-directed", "One steady calling".'),
+      },
+      'Your Life at a Glance: direct answers to the questions people come with.',
+    );
+  } else {
+    properties.traits = arr(
+      obj({
+        label: str('A category, e.g. "Element", "Emotional type", "Thinking style", "Superpower".'),
+        value: str('A memorable 1–4 word answer specific to these hands. Not a generic adjective.'),
+        line: lineRef('The line this trait mostly comes from; "none" for hand shape, fingers, thumb or mounts.'),
+      }),
+      '4 to 6 at-a-glance traits about the couple, each from a different part of the hands.',
+    );
+  }
+  properties.hand_notes = arr(
+    obj({
+      person: { type: 'integer', description: '0 for the first person, 1 for the second (couples).' },
+      hand: enumOf(['left', 'right']),
+      summary: str('2–3 sentences on what this hand shows on its own, in our method (non-dominant: natural tendencies; dominant: how they have developed them). Specific features only; do not repeat the sections.'),
+    }),
+    'One entry per hand per person.',
+  );
+  properties.sections = arr(
+    obj({
+      id: enumOf(sectionIds),
+      title: str('The section title exactly as given.'),
+      name: str('A short, memorable name (2–4 words) for what this section found, e.g. "The Steady Anchor" or "Late-Blooming Leader". Accurate rather than flattering; never reuse a name across sections.'),
+      tags: arr(str('One or two words, e.g. "Loyal", "Slow to trust".'), '2 or 3 qualities that sum up this section, not all positive.'),
+      lines: arr(enumOf([...LINE_KEYS]), 'The 1–3 lines this section is mainly read from. Only lines that were visible. Empty if it rests on hand shape, fingers or mounts only.'),
+      body: str('2–4 short paragraphs (each 2–4 sentences) separated by blank lines. **bold** allowed. No headings. Give direct answers, not vague themes. No filler that would fit anyone.'),
+      tension: str('One or two sentences on a real challenge, contradiction or trade-off in this area, grounded in the features.'),
+      evidence: arr(
+        obj({ text: str('A short note of an observed feature, e.g. "Curved heart line ending under the index finger".'), visibility: enumOf(['clear', 'faint']) }),
+        '1–4 observed features this section is based on.',
+      ),
+    }),
+    'Exactly the requested sections, in the requested order.',
+  );
+  if (mode === 'solo') {
+    properties.career_paths = arr(str('A concrete role or field, e.g. "Product design", "Running their own practice".'), '3 to 5 careers or fields that fit, most fitting first.');
+    properties.timeline = arr(
+      obj({
+        when: str('Approximate period from the rulebook timing scale, e.g. "Earlier life", "Mid-20s", "Early 30s", "Mid-40s onward". "Later in life" when the scale gives no age.'),
+        title: str('2–5 words, e.g. "Direction firms up".'),
+        detail: str('One sentence naming the feature and what it suggests.'),
+        area: enumOf(['love', 'career', 'life']),
+        line: lineRef('The line this comes from.'),
+        timing: enumOf(['approximate', 'unclear'], '"approximate" only when the rulebook timing scale supports the age; otherwise "unclear".'),
+      }),
+      '3 to 5 life periods or turning points in chronological order, only from features actually seen (breaks, branches, fate line start and changes, relationship line positions).',
+    );
+  }
+  properties.action_steps = arr(str(), '3 concrete, doable reflection prompts or actions for the next two weeks, tied to the reading.');
+  properties.closing = obj({ kind: enumOf(['mantra', 'reflection']), text: str() });
   if (includeFamily) {
     properties.family = obj({
-      marriages: prediction,
-      children: prediction,
+      marriages: prediction('significant marriages or long-term partnerships'),
+      children: prediction('potential children'),
       timing: str('Approximate timing for significant relationships based on line positions, framed as tendencies.'),
     });
   }

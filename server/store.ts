@@ -56,8 +56,8 @@ export async function saveReading(
 
   await env.DB.prepare(
     `INSERT INTO readings (id, created_at, last_viewed_at, mode, focus, include_family, provider, age_band, dominant_hand, element,
-       marriages, children, marketing_consent, marketing_consent_at, data)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       marriages, children, curious, marketing_consent, marketing_consent_at, data)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
@@ -72,6 +72,7 @@ export async function saveReading(
       dominant?.element ?? null,
       reading.family?.marriages.range ?? null,
       reading.family?.children.range ?? null,
+      reading.curious ?? null,
       data.marketingConsent ? 1 : 0,
       data.marketingConsent ? data.createdAt : null,
       JSON.stringify(data),

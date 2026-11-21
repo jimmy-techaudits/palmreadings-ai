@@ -5,6 +5,10 @@ export type Focus = 'overall' | 'love' | 'career';
 export type Hand = 'left' | 'right';
 export type View = 'palm' | 'side';
 
+/** Areas a person can say they are most curious about. */
+export const CURIOUS_TOPICS = ['marriage', 'children', 'career', 'money', 'life_changes'] as const;
+export type Curious = (typeof CURIOUS_TOPICS)[number];
+
 export interface Person {
   name?: string;
   age?: number;
@@ -29,6 +33,8 @@ export interface ReadingRequest {
   photos: PhotoInput[];
   /** Optional, separate permission to use the palm photos in marketing. */
   marketingConsent?: boolean;
+  /** Optional: the area the person is most curious about; shown first and given the most depth. */
+  curious?: Curious;
   /** Cloudflare Turnstile token. */
   turnstileToken?: string;
 }
@@ -88,6 +94,14 @@ export interface PersonObservation {
 export const LINE_KEYS = ['heart', 'head', 'life', 'fate', 'sun', 'mercury'] as const;
 export type LineKey = (typeof LINE_KEYS)[number];
 
+/** How well a feature could be seen: shown instead of percentage confidence. */
+export type Seen = 'clear' | 'faint' | 'not_assessable';
+
+export interface Evidence {
+  text: string;
+  visibility: 'clear' | 'faint';
+}
+
 export interface ReadingSection {
   id: string;
   title: string;
@@ -98,7 +112,10 @@ export interface ReadingSection {
   /** The lines this section is mainly read from (used for color coding and the mini hand diagram). */
   lines?: LineKey[];
   body: string;
-  evidence: string[];
+  /** One honest challenge, contradiction or trade-off in this area. */
+  tension?: string;
+  /** Plain strings on readings made before Nov 21 2026. */
+  evidence: (string | Evidence)[];
 }
 
 export interface Trait {
@@ -108,17 +125,60 @@ export interface Trait {
   line?: LineKey | 'none';
 }
 
+/** One "Your Life at a Glance" answer, e.g. Career: "Creative leadership". */
+export interface GlanceItem {
+  answer: string;
+  detail: string;
+  line: LineKey | 'none';
+  visibility: Seen;
+}
+
+export interface Glance {
+  career: GlanceItem;
+  money: GlanceItem;
+  turning_point: GlanceItem;
+  life_path: GlanceItem;
+}
+
+export interface TimelineEntry {
+  /** "Earlier life", "Early 30s", "Mid-40s onward"… */
+  when: string;
+  title: string;
+  detail: string;
+  area: 'love' | 'career' | 'life';
+  line: LineKey | 'none';
+  /** "approximate" when the rulebook timing scale supports it, otherwise "unclear". */
+  timing: 'approximate' | 'unclear';
+}
+
+/** What one hand shows on its own (the reading itself is combined). */
+export interface HandNote {
+  person: number;
+  hand: Hand;
+  summary: string;
+}
+
 export interface FamilyPrediction {
+  /** A number or small range, e.g. "2" or "1–2". "?" when the lines could not be assessed. */
   range: string;
   confidence: 'high' | 'medium' | 'low';
   explanation: string;
+  /** Missing on readings made before Nov 21 2026. */
+  visibility?: Seen;
 }
 
 export interface Reading {
   headline: string;
   summary: string;
-  traits: Trait[];
+  /** Solo readings from Nov 21 2026: the life questions people care about most. */
+  glance?: Glance;
+  /** Couples readings, and solo readings made before Nov 21 2026. */
+  traits?: Trait[];
+  hand_notes?: HandNote[];
   sections: ReadingSection[];
+  /** 3–5 concrete roles or fields (solo readings with a career section). */
+  career_paths?: string[];
+  timeline?: TimelineEntry[];
   family?: {
     marriages: FamilyPrediction;
     children: FamilyPrediction;
@@ -126,6 +186,8 @@ export interface Reading {
   };
   action_steps: string[];
   closing: { kind: 'mantra' | 'reflection'; text: string };
+  /** Copied from the request so the page can show that topic first. */
+  curious?: Curious;
 }
 
 // ---------- Streaming protocol (newline-delimited JSON) ----------

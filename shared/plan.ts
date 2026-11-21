@@ -9,7 +9,7 @@ export interface SlotSpec {
 }
 
 /**
- * Both palms are always required: the non-dominant hand shows innate potential,
+ * Both palms are always required: in our method the non-dominant hand shows natural tendencies,
  * the dominant hand shows what the person has built. The pinky-side view of the
  * dominant hand is where relationship and children lines sit, so it becomes
  * required when family predictions are requested.
@@ -40,28 +40,53 @@ export interface SectionSpec {
   tier: 'free' | 'premium';
 }
 
+const MARRIAGE_FAMILY: SectionSpec = {
+  id: 'marriage_family',
+  title: 'Marriage & Family',
+  guidance:
+    'Significant partnerships and family from the relationship and children lines on the palm edge: how many, how deep, roughly when, and what kind of bond each line suggests. Match the numbers given in "family". Where lines were not readable, say so.',
+  tier: 'premium',
+};
+
+const CAREER: SectionSpec = {
+  id: 'career',
+  title: 'Career & Success',
+  guidance:
+    'Three short paragraphs, each starting with a bold lead-in. **Direction.** The kinds of work, roles and environments that fit, named concretely. **How it evolves.** Steady path, late start, changes of direction or self-directed work, from the fate line. **Recognition.** Ambition, leadership and how success tends to show up. From the head, fate and sun lines, the Jupiter mount and the fingers.',
+  tier: 'premium',
+};
+
+const MONEY: SectionSpec = {
+  id: 'money',
+  title: 'Money & Prosperity',
+  guidance:
+    'Earning style, independence, appetite for risk, and how money tends to come (steady build, own ventures, recognition for their work), from the fate, sun and mercury lines, head line shape, thumb, and Jupiter and Mercury mounts. Traditional tendencies only, never financial advice or guarantees.',
+  tier: 'premium',
+};
+
 const SOLO: Record<Focus, SectionSpec[]> = {
   overall: [
-    { id: 'personality', title: 'Your Core Nature', guidance: 'Temperament and how they move through the world, from hand shape, element, thumb and head line.', tier: 'free' },
-    { id: 'potential_vs_path', title: 'Born With vs. Built', guidance: 'Contrast the non-dominant (innate) hand with the dominant (developed) hand. Name concrete differences between the two hands.', tier: 'free' },
-    { id: 'love', title: 'Love & Connection', guidance: 'How they love and what they need, from the heart line, Venus mount and relationship lines.', tier: 'premium' },
-    { id: 'career', title: 'Work, Money & Purpose', guidance: 'Natural work style and where they thrive, from the head, fate and sun lines and the fingers.', tier: 'premium' },
-    { id: 'energy', title: 'Energy & Resilience', guidance: 'Vitality, stress patterns and recharge style from the life line and mounts. Never discuss illness or lifespan.', tier: 'premium' },
-    { id: 'turning_points', title: 'Turning Points', guidance: 'Approximate life phases and changes suggested by breaks, branches and the fate line, using the rulebook timing scale.', tier: 'premium' },
+    { id: 'personality', title: 'Your Core Nature', guidance: 'Temperament, strengths and inner contradictions, from hand shape, element, thumb, fingers and head line. How they think, what drives them, and where they get in their own way.', tier: 'free' },
+    { id: 'potential_vs_path', title: 'Born With vs. Built', guidance: 'In our method the non-dominant hand shows natural tendencies and the dominant hand shows how they have developed them. Go feature by feature: what stayed the same between the two hands and what changed, and what that says about the path they have taken.', tier: 'free' },
+    { id: 'love', title: 'Love & Relationships', guidance: 'How they love, what they need from a partner, and their relationship patterns, from the heart line, Venus mount and how the head and heart lines relate.', tier: 'premium' },
+    MARRIAGE_FAMILY,
+    CAREER,
+    MONEY,
+    { id: 'energy', title: 'Energy & Wellbeing', guidance: 'Vitality, how they handle pressure and how they recharge, from the life line and Venus and Mars mounts. Traditional symbolism only: never medical claims, illness or lifespan.', tier: 'premium' },
   ],
   love: [
     { id: 'love_style', title: 'How You Love', guidance: 'Emotional style and expression from the heart line shape, end point and depth.', tier: 'free' },
     { id: 'needs', title: 'What You Need From a Partner', guidance: 'Core needs and attachment tendencies, from the heart line, Venus mount and thumb.', tier: 'free' },
     { id: 'patterns', title: 'Patterns & Blind Spots', guidance: 'Recurring relationship patterns or blocks, from chains, islands, breaks and the head/heart relationship.', tier: 'premium' },
-    { id: 'timeline', title: 'Your Romantic Timeline', guidance: 'Likely timing of significant relationships from relationship-line positions and heart-line branches.', tier: 'premium' },
+    MARRIAGE_FAMILY,
     { id: 'next_chapter', title: 'The Next Chapter', guidance: 'Where love is heading now, contrasting the dominant and non-dominant hands.', tier: 'premium' },
   ],
   career: [
     { id: 'work_style', title: 'Your Natural Work Style', guidance: 'How they think and work, from the head line, hand shape and fingers.', tier: 'free' },
     { id: 'drive', title: 'Drive & Ambition', guidance: 'Motivation and leadership from the Jupiter mount, index finger and thumb.', tier: 'free' },
-    { id: 'strengths', title: 'Where You Shine', guidance: 'Fields and roles that fit, from the sun and mercury lines and prominent mounts.', tier: 'premium' },
+    { ...CAREER, id: 'strengths', title: 'Where You Shine' },
+    MONEY,
     { id: 'blockers', title: 'What Holds You Back', guidance: 'Hesitations or friction points, from head-line features and the head/life line start.', tier: 'premium' },
-    { id: 'career_timeline', title: 'Career Turning Points', guidance: 'Phases and shifts from the fate line, using the rulebook timing scale.', tier: 'premium' },
   ],
 };
 
@@ -79,8 +104,9 @@ const COUPLE: Record<Focus, SectionSpec[]> = {
 COUPLE.love = COUPLE.overall;
 COUPLE.career = COUPLE.overall;
 
-export function sectionPlan(mode: Mode, focus: Focus, people: Person[]): SectionSpec[] {
-  const base = mode === 'couple' ? COUPLE[focus] : SOLO[focus];
+export function sectionPlan(mode: Mode, focus: Focus, people: Person[], includeFamily: boolean): SectionSpec[] {
+  // Marriage & Family needs the pinky-side photo, so it is only planned when that was requested.
+  const base = (mode === 'couple' ? COUPLE[focus] : SOLO[focus]).filter((s) => includeFamily || s.id !== 'marriage_family');
   const a = people[0]?.name?.trim() || 'Partner A';
   const b = people[1]?.name?.trim() || 'Partner B';
   return base.map((s) => ({ ...s, title: s.title.replace('{A}', a).replace('{B}', b) }));
