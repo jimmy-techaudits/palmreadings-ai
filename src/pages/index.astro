@@ -9,6 +9,16 @@ const container = 'relative mx-auto max-w-[1200px] px-4 sm:px-8';
 const h2 = 'mt-3.5 font-display text-[clamp(32px,3.4vw,46px)] font-medium leading-[1.15] text-white';
 const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
 
+/* Twinkling stars over the hero's starfield: [left %, top %, size px, color, duration s, delay s]. */
+const twinkles: [number, number, number, string, number, number][] = [
+  [4, 12, 2, '#fff', 3.2, 0], [12, 68, 1.5, '#c9b8f0', 4.1, 1.2], [18, 28, 2, '#fad9a2', 5, 2.4], [24, 86, 1.5, '#fff', 3.6, 0.6],
+  [31, 8, 1.5, '#c9b8f0', 4.6, 3.1], [37, 52, 2, '#fff', 3.9, 1.8], [44, 92, 1.5, '#fad9a2', 5.4, 0.3], [49, 18, 2.5, '#fff', 4.4, 2.7],
+  [55, 74, 1.5, '#c9b8f0', 3.4, 1.1], [58, 6, 2, '#fad9a2', 4.8, 3.6], [63, 40, 1.5, '#fff', 3.1, 2.1], [67, 90, 2, '#c9b8f0', 5.2, 0.9],
+  [72, 14, 1.5, '#fff', 4.2, 1.5], [76, 58, 2.5, '#fad9a2', 3.7, 2.9], [81, 30, 1.5, '#c9b8f0', 4.9, 0.4], [85, 82, 2, '#fff', 3.5, 3.3],
+  [89, 46, 1.5, '#fad9a2', 5.1, 1.7], [93, 10, 2, '#fff', 4, 2.5], [96, 66, 1.5, '#c9b8f0', 3.3, 0.7], [8, 44, 1.5, '#fff', 4.7, 3.9],
+  [41, 34, 1.5, '#c9b8f0', 5.6, 2.2], [69, 70, 1.5, '#fff', 4.3, 3.5],
+];
+
 /* Floating line labels around the hero orbit. Positioned on the orbit from sm up; a wrapped row below it on phones. */
 const heroLabels = [
   { text: 'Heart line · love', dot: 'bg-line-heart', border: 'border-line-heart/40', pos: 'sm:left-[-4%] sm:top-[22%]' },
@@ -115,6 +125,14 @@ const privacy = [
     <!-- 1. Hero -->
     <section class="starfield relative overflow-hidden bg-night-950">
       <div aria-hidden="true" class="glow-hero absolute inset-0"></div>
+      <div aria-hidden="true" class="pointer-events-none absolute inset-0">
+        {twinkles.map(([x, y, size, color, dur, delay]) => (
+          <span
+            class="twinkle absolute rounded-full"
+            style={`left:${x}%;top:${y}%;width:${size}px;height:${size}px;background:${color};box-shadow:0 0 ${size * 3}px ${color};animation-duration:${dur}s;animation-delay:${delay}s`}
+          ></span>
+        ))}
+      </div>
       <div class:list={[container, 'flex flex-wrap items-center gap-14 pb-[72px] pt-14 md:pb-[104px] md:pt-[88px]']}>
         <div class="min-w-0 flex-[1_1_480px]">
           <p class="mb-6 inline-flex items-center gap-2.5 rounded-full border border-gold-400/35 bg-gold-400/[0.06] px-3.5 py-2 text-xs font-medium uppercase tracking-[0.1em] text-gold-400 sm:px-4 sm:tracking-[0.16em]">
@@ -151,15 +169,22 @@ const privacy = [
           <div class="relative w-full max-w-[520px]">
             <div class="relative aspect-square">
               <div aria-hidden="true" class="absolute inset-0 rounded-full border border-lavender-300/[0.14]"></div>
-              <div aria-hidden="true" class="absolute inset-[9%] rounded-full border border-dashed border-gold-400/35"></div>
+              <div aria-hidden="true" class="orbit-spin absolute inset-[9%] rounded-full border border-dashed border-gold-400/35"></div>
               <div aria-hidden="true" class="orbit-core absolute inset-[20%] rounded-full border border-lavender-300/20"></div>
-              <img src={IMAGES.icon} alt="" width="512" height="512" class="icon-glow absolute left-[17%] top-[15%] h-auto w-[66%]" />
-              <div aria-hidden="true" class="absolute left-1/2 top-[-6px] -ml-1.5 size-3 rounded-full bg-gold-400 shadow-[0_0_18px_var(--color-gold-400)]"></div>
-              <div aria-hidden="true" class="absolute left-[2%] top-[62%] size-2 rounded-full bg-lavender-300 shadow-[0_0_14px_var(--color-lavender-300)]"></div>
+              <img src={IMAGES.icon} alt="" width="512" height="512" class="icon-glow icon-float absolute left-[17%] top-[15%] h-auto w-[66%]" />
+              <!-- The two glowing dots travel around the outer ring, at different speeds and directions. -->
+              <div aria-hidden="true" class="orbit-travel absolute inset-0">
+                <div class="absolute left-1/2 top-[-6px] -ml-1.5 size-3 rounded-full bg-gold-400 shadow-[0_0_18px_var(--color-gold-400)]"></div>
+              </div>
+              <div aria-hidden="true" class="orbit-travel-reverse absolute inset-0">
+                <div class="absolute left-[2%] top-[62%] size-2 rounded-full bg-lavender-300 shadow-[0_0_14px_var(--color-lavender-300)]"></div>
+              </div>
             </div>
             <ul class="mt-6 flex flex-wrap justify-center gap-2.5 sm:pointer-events-none sm:absolute sm:inset-0 sm:mt-0 sm:block" aria-label="Lines we read">
-              {heroLabels.map((l) => (
-                <li class:list={['floating-label flex w-max items-center gap-2 rounded-full border bg-[rgba(14,10,34,0.85)] px-3.5 py-2 text-xs text-ink sm:absolute', l.border, l.pos]}>
+              {heroLabels.map((l, i) => (
+                <li
+                  style={`animation-delay:${i * -1.7}s;animation-duration:${6 + i * 0.9}s`}
+                  class:list={['floating-label label-bob flex w-max items-center gap-2 rounded-full border bg-[rgba(14,10,34,0.85)] px-3.5 py-2 text-xs text-ink sm:absolute', l.border, l.pos]}>
                   <span aria-hidden="true" class:list={['size-2 shrink-0 rounded-full', l.dot]}></span>
                   {l.text}
                 </li>
@@ -449,6 +474,60 @@ const privacy = [
   }
   .floating-label {
     backdrop-filter: blur(6px);
+  }
+
+  /* Hero movement: slow and calm. All of it stops when the visitor prefers reduced motion. */
+  .twinkle {
+    opacity: 0.6;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; transform: scale(0.7); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+  .orbit-spin {
+    animation: spin 120s linear infinite;
+  }
+  .orbit-travel {
+    animation: spin 48s linear infinite;
+  }
+  .orbit-travel-reverse {
+    animation: spin 72s linear infinite reverse;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .orbit-core {
+    animation: breathe 7s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.04); opacity: 1; }
+  }
+  .icon-float {
+    animation: float 8s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .label-bob {
+    animation: bob 7s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .twinkle,
+    .orbit-spin,
+    .orbit-travel,
+    .orbit-travel-reverse,
+    .orbit-core,
+    .icon-float,
+    .label-bob {
+      animation: none !important;
+    }
   }
   .diagram-card {
     background: radial-gradient(circle at 50% 40%, rgba(124, 58, 237, 0.25), rgba(14, 10, 34, 0.9) 70%);
