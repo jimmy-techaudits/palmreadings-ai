@@ -183,8 +183,8 @@ function HandChoice({ value, onChange }: { value?: Hand; onChange: (h: Hand) => 
                   : 'border-lavender-300/18 bg-night-950/50 text-ink-soft hover:border-gold-400/50'
               }`}
             >
-              {/* The icon is a right hand; mirror it for the left. */}
-              <HandIcon size={44} strokeWidth={1.4} aria-hidden="true" className={h === 'left' ? '-scale-x-100' : ''} />
+              {/* Shown palm-up, as you see your own palm: the icon's thumb is on the left, which matches the left hand. Mirror it for the right. */}
+              <HandIcon size={44} strokeWidth={1.4} aria-hidden="true" className={h === 'right' ? '-scale-x-100' : ''} />
               <span className="text-lg font-medium">{h === 'left' ? 'Left hand' : 'Right hand'}</span>
             </button>
           );
