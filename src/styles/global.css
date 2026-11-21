@@ -97,6 +97,8 @@ body {
   box-shadow: var(--focus-ring);
 }
 
+/* Shared components live in the components layer so Tailwind utilities on the same element can override them. */
+@layer components {
 /* Italic Cormorant accent word inside a Cinzel heading: "Your hands have been writing your <em class="accent">story</em>". */
 .accent {
   font-family: var(--font-accent);
@@ -192,6 +194,7 @@ body {
     radial-gradient(60% 55% at 50% 0%, rgba(110, 52, 200, 0.35), transparent 70%),
     radial-gradient(40% 40% at 85% 30%, rgba(124, 58, 237, 0.18), transparent 70%);
 }
+}
 
 /* Legacy long-form styles (legal pages restyle these). */
 .prose-page h2 {
@@ -237,8 +240,12 @@ body {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
   }
+  /* No hover lifts (the .btn-gold lift and any hover:-translate-y-* utility). */
   .btn-gold:hover:not(:disabled) {
     transform: none;
+  }
+  *:hover {
+    translate: none !important;
   }
 }
 

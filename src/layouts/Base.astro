@@ -55,9 +55,9 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
   </head>
   <body class="flex min-h-screen flex-col">
     <header class="relative z-30 border-b border-white/[0.08] bg-[linear-gradient(180deg,rgba(28,14,58,0.92),rgba(10,8,24,0.88))] print:hidden">
-      <div class="mx-auto flex max-w-[1200px] items-center justify-between gap-x-6 gap-y-4 px-4 py-3.5 sm:px-8">
+      <div class="mx-auto flex max-w-[1200px] items-center justify-between gap-x-3 gap-y-4 px-4 py-3.5 max-[359px]:px-3 sm:gap-x-6 sm:px-8">
         <a href="/" aria-label="Palm Readings AI home" class="flex shrink-0 items-center rounded-lg">
-          <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" class="block h-12 w-auto sm:h-16" />
+          <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" class="block h-12 w-auto max-[359px]:h-10 sm:h-16" />
         </a>
         <nav class="flex items-center gap-1.5" aria-label="Main">
           {nav.map((n) => (
@@ -73,8 +73,8 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
             </a>
           ))}
           {!hideCta && (
-            <a href="/reading/?new=1" class="btn-gold ml-1 shrink-0 whitespace-nowrap px-4 py-2.5 text-base sm:ml-2.5 sm:px-[22px]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={sparkle} /></svg>
+            <a href="/reading/?new=1" class="btn-gold ml-1 shrink-0 whitespace-nowrap px-4 py-2.5 text-base max-[359px]:px-3 max-[359px]:text-[15px] sm:ml-2.5 sm:px-[22px]">
+              <svg class="max-[359px]:hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={sparkle} /></svg>
               Start a Reading
             </a>
           )}
