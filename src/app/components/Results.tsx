@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import {
   Baby, Briefcase, Brain, ChevronDown, Compass, Flame, Gem, Heart, HeartHandshake, Loader2,
   Check, Copy, Link2, MessageCircle, Milestone, Printer, RotateCcw, Send, Sparkles, Sprout, Target, ThumbsDown, ThumbsUp,
@@ -42,24 +42,44 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
   const title = mode === 'couple' ? `${names[0] || 'Partner A'} & ${names[1] || 'Partner B'}` : names[0] ? `${names[0]}’s Reading` : 'Your Reading';
   const personName = (i: number) => names[i] || (i === 0 ? 'Partner A' : 'Partner B');
 
-  /** The dominant hand's observations for a person (falls back to whichever hand was seen). */
-  const mainHand = (i: number): HandObservation | undefined => {
+  // Which person's hand, and which hand, the diagrams show. Starts on the dominant hand.
+  const [person, setPerson] = useState(0);
+  const [side, setSide] = useState<Hand>(dominantHands?.[0] ?? 'right');
+  const picker: HandPick = {
+    mode,
+    observations,
+    dominantHands,
+    personName,
+    person,
+    side,
+    setPerson: (i) => {
+      setPerson(i);
+      setSide(dominantHands?.[i] ?? 'right');
+    },
+    setSide,
+  };
+  /** The hand currently chosen in the picker, for a given person. */
+  const handFor = (i: number): HandObservation | undefined => {
     const hands = observations[i]?.hands ?? [];
-    return hands.find((h) => h.hand === dominantHands?.[i]) ?? hands.find((h) => h.hand === 'right') ?? hands[0];
+    return hands.find((h) => h.hand === side) ?? hands[0];
   };
 
-  const navItems = useMemo(
+  const navItems = useMemo<NavItem[]>(
     () => [
-      ...reading.sections.map((s) => ({ id: `s-${s.id}`, label: s.title, color: s.lines?.[0] ? LINE_COLORS[s.lines[0]] : undefined })),
-      ...(reading.family ? [{ id: 's-family', label: 'Marriage & Family', color: undefined }] : []),
-      { id: 's-next', label: 'Next steps', color: undefined },
+      { id: 's-hands', label: 'Your hands' },
+      { id: 's-glance', label: 'At a glance' },
+      ...reading.sections.map((s) => ({ id: `s-${s.id}`, label: s.title, color: s.lines?.[0] ? LINE_COLORS[s.lines[0]] : undefined, lines: s.lines })),
+      ...(reading.family ? [{ id: 's-family', label: 'Marriage & Family' }] : []),
+      { id: 's-next', label: 'Next steps' },
     ],
     [reading],
   );
+  const active = useActiveSection(navItems);
+  const activeLines = navItems.find((n) => n.id === active)?.lines;
 
   return (
-    <article className="mx-auto max-w-3xl">
-      <header className="mb-8 text-center">
+    <article className="mx-auto max-w-3xl lg:max-w-none">
+      <header className="mx-auto mb-8 max-w-3xl text-center">
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">
           {mode === 'couple' ? 'Couples Compatibility' : FOCUS_LABELS[focus]} · {title}
         </p>
@@ -67,62 +87,83 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
         <p className="mx-auto mt-5 max-w-2xl font-read text-[1.05rem] leading-relaxed text-violet-100 sm:text-lg print-dark">{reading.summary}</p>
       </header>
 
-      {readingId && <PrivateLink />}
+      <div className="lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-10 print:!block">
+        <aside className="hidden lg:block print:hidden" aria-label="Reading navigation">
+          <div className="sticky top-6 space-y-6">
+            <div className="panel p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-400">Showing</p>
+                {handFor(person) && (
+                  <HandDiagram hand={handFor(person)!} highlight={activeLines?.length ? activeLines : undefined} mini className="-my-2 w-11 shrink-0" />
+                )}
+              </div>
+              <div className="[&_[role=radiogroup]]:flex [&_[role=radiogroup]]:w-full">
+                <HandPicker pick={picker} vertical />
+              </div>
+            </div>
+            <SideNav items={navItems} active={active} />
+          </div>
+        </aside>
 
-      <HandsHero observations={observations} mode={mode} personName={personName} dominantHands={dominantHands} photos={photos} />
+        <div className="min-w-0">
+          {readingId && <PrivateLink />}
 
-      <AtAGlance traits={reading.traits} />
+          <div>
+            <HandsHero pick={picker} hand={handFor(person)} photos={photos} />
 
-      <div>
-        <div className="space-y-5">
-          {reading.sections.map((s) => (
-            <SectionCard key={s.id} section={s} hand={mainHand(s.id === 'person_b' ? 1 : 0)} />
-          ))}
+            <AtAGlance traits={reading.traits} />
 
-          {reading.family && <FamilyPanel family={reading.family} />}
-
-          <section id="s-next" className="panel scroll-mt-6 p-6 sm:p-8">
-            <h2 className="mb-4 flex items-center gap-3 font-display text-xl text-white print-dark">
-              <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Target size={20} /></span> Your next two weeks
-            </h2>
-            <ol className="space-y-3">
-              {reading.action_steps.map((a, i) => (
-                <li key={a} className="flex gap-3 text-violet-100 print-dark">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-night-900">{i + 1}</span>
-                  <span className="pt-0.5 leading-relaxed">{a}</span>
-                </li>
+            <div className="space-y-5">
+              {reading.sections.map((s) => (
+                <SectionCard key={s.id} section={s} hand={handFor(s.id === 'person_b' ? 1 : 0)} />
               ))}
-            </ol>
-          </section>
 
-          <section className="rounded-2xl border border-gold-400/30 bg-gradient-to-br from-violet-900/40 to-night-900 p-8 text-center">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">
-              {reading.closing.kind === 'mantra' ? 'Your mantra' : 'A question to sit with'}
-            </p>
-            <p className="font-display text-2xl leading-snug text-white print-dark">“{reading.closing.text}”</p>
-          </section>
+              {reading.family && <FamilyPanel family={reading.family} />}
+
+              <section id="s-next" className="panel scroll-mt-6 p-6 sm:p-8">
+                <h2 className="mb-4 flex items-center gap-3 font-display text-xl text-white print-dark">
+                  <span className="rounded-lg bg-gold-400/10 p-2 text-gold-400"><Target size={20} /></span> Your next two weeks
+                </h2>
+                <ol className="space-y-3">
+                  {reading.action_steps.map((a, i) => (
+                    <li key={a} className="flex gap-3 text-violet-100 print-dark">
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-night-900">{i + 1}</span>
+                      <span className="pt-0.5 leading-relaxed">{a}</span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+
+              <section className="rounded-2xl border border-gold-400/30 bg-gradient-to-br from-violet-900/40 to-night-900 p-8 text-center">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">
+                  {reading.closing.kind === 'mantra' ? 'Your mantra' : 'A question to sit with'}
+                </p>
+                <p className="font-display text-2xl leading-snug text-white print-dark">“{reading.closing.text}”</p>
+              </section>
+            </div>
+            <BottomNav items={navItems} active={active} pick={picker} />
+          </div>
+
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center print:hidden">
+            <Button onClick={() => window.print()}><Printer size={18} /> Save as PDF</Button>
+            <Button variant="secondary" onClick={onReset}><RotateCcw size={18} /> Start a new reading</Button>
+          </div>
+
+          <FeedbackBox mode={mode} focus={focus} readingId={readingId} />
+
+          <div className="mt-12">
+            {photos && photos.length > 0 && <PhotoStrip photos={photos} />}
+            {photosRemoved && (
+              <p className="panel mb-5 p-4 text-sm text-violet-200/80 print:hidden">
+                The photos for this reading were removed after three years without being opened. Your reading is still here.
+              </p>
+            )}
+            {marketingConsent && !photosRemoved && <MarketingToggle {...marketingConsent} />}
+          </div>
+
+          {onDelete && <DeleteBox onDelete={onDelete} />}
         </div>
-        <SectionNav items={navItems} />
       </div>
-
-      <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center print:hidden">
-        <Button onClick={() => window.print()}><Printer size={18} /> Save as PDF</Button>
-        <Button variant="secondary" onClick={onReset}><RotateCcw size={18} /> Start a new reading</Button>
-      </div>
-
-      <FeedbackBox mode={mode} focus={focus} readingId={readingId} />
-
-      <div className="mt-12">
-        {photos && photos.length > 0 && <PhotoStrip photos={photos} />}
-        {photosRemoved && (
-          <p className="panel mb-5 p-4 text-sm text-violet-200/80 print:hidden">
-            The photos for this reading were removed after three years without being opened. Your reading is still here.
-          </p>
-        )}
-        {marketingConsent && !photosRemoved && <MarketingToggle {...marketingConsent} />}
-      </div>
-
-      {onDelete && <DeleteBox onDelete={onDelete} />}
     </article>
   );
 }
@@ -154,36 +195,56 @@ function Dot({ color, className = '' }: { color?: string; className?: string }) 
   return <span aria-hidden className={`inline-block size-2 shrink-0 rounded-full ${className}`} style={{ background: color ?? 'var(--color-gold-400)' }} />;
 }
 
-/** "What we saw": a drawn diagram of each hand next to the photo, with a legend of the lines. */
-function HandsHero({
-  observations,
-  mode,
-  personName,
-  dominantHands,
-  photos,
-}: {
-  observations: PersonObservation[];
+interface HandPick {
   mode: string;
-  personName: (i: number) => string;
+  observations: PersonObservation[];
   dominantHands?: Hand[];
-  photos?: ResultPhoto[];
-}) {
-  const [person, setPerson] = useState(0);
-  const [side, setSide] = useState<Hand>(dominantHands?.[0] ?? 'right');
-  const [active, setActive] = useState<LineKey | null>(null);
+  personName: (i: number) => string;
+  person: number;
+  side: Hand;
+  setPerson: (i: number) => void;
+  setSide: (h: Hand) => void;
+}
 
-  const hands = observations[person]?.hands ?? [];
-  const hand = hands.find((h) => h.hand === side) ?? hands[0];
+/** Person (couples only) and Left/Right choice. Drives every hand diagram on the page. */
+function HandPicker({ pick, vertical = false, compact = false }: { pick: HandPick; vertical?: boolean; compact?: boolean }) {
+  const hands = pick.observations[pick.person]?.hands ?? [];
+  const dominant = pick.dominantHands?.[pick.person];
+  return (
+    <div className={`flex gap-2 ${vertical ? 'flex-col items-stretch' : 'items-center'}`}>
+      {pick.mode === 'couple' && (
+        <Segmented
+          label="Person"
+          value={String(pick.person)}
+          options={pick.observations.map((_, i) => ({ value: String(i), label: compact ? pick.personName(i).slice(0, 1) : pick.personName(i) }))}
+          onChange={(v) => pick.setPerson(Number(v))}
+          vertical={vertical}
+        />
+      )}
+      <Segmented
+        label="Hand"
+        value={pick.side}
+        options={hands.map((h) => ({
+          value: h.hand,
+          label: compact ? cap(h.hand).slice(0, 1) : `${cap(h.hand)}${h.hand === dominant ? ' · dominant' : ''}`,
+        }))}
+        onChange={(v) => pick.setSide(v as Hand)}
+        vertical={vertical}
+      />
+    </div>
+  );
+}
+
+/** "What we saw": a drawn diagram of the chosen hand next to its photo, with a legend of the lines. */
+function HandsHero({ pick, hand, photos }: { pick: HandPick; hand?: HandObservation; photos?: ResultPhoto[] }) {
+  const [active, setActive] = useState<LineKey | null>(null);
+  useEffect(() => setActive(null), [hand]);
   if (!hand) return null;
 
-  const dominant = dominantHands?.[person];
-  const role = dominant ? (hand.hand === dominant ? 'Dominant hand: what you’ve built' : 'Non-dominant hand: what you were born with') : null;
-  const photo = photos?.find((p) => p.slot === `p${person}-${hand.hand}-palm`);
-  const choosePerson = (i: number) => {
-    setPerson(i);
-    setSide(dominantHands?.[i] ?? 'right');
-    setActive(null);
-  };
+  const dominant = pick.dominantHands?.[pick.person];
+  const who = pick.mode === 'couple' ? `${pick.personName(pick.person)}: ` : '';
+  const role = `${who}${cap(hand.hand)} hand${dominant ? (hand.hand === dominant ? ' · dominant, what you’ve built' : ' · non-dominant, what you were born with') : ''}`;
+  const photo = photos?.find((p) => p.slot === `p${pick.person}-${hand.hand}-palm`);
 
   const shape = [
     hand.element !== 'unclear' ? `${cap(hand.element)} hand` : '',
@@ -193,31 +254,14 @@ function HandsHero({
   ].filter(Boolean);
 
   return (
-    <section className="panel mb-8 overflow-hidden" aria-labelledby="hands-title">
-      <div className="flex flex-wrap items-end justify-between gap-3 px-5 pt-5 sm:px-8 sm:pt-7">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">What we saw</p>
-          <h2 id="hands-title" className="font-display text-2xl text-white print-dark">Your hands</h2>
-        </div>
-        <div className="flex flex-col items-end gap-2 print:hidden">
-          {mode === 'couple' && (
-            <Segmented
-              label="Person"
-              value={String(person)}
-              options={observations.map((_, i) => ({ value: String(i), label: personName(i) }))}
-              onChange={(v) => choosePerson(Number(v))}
-            />
-          )}
-          <Segmented
-            label="Hand"
-            value={hand.hand}
-            options={hands.map((h) => ({ value: h.hand, label: `${cap(h.hand)}${h.hand === dominant ? ' · dominant' : ''}` }))}
-            onChange={(v) => {
-              setSide(v as Hand);
-              setActive(null);
-            }}
-          />
-        </div>
+    <section id="s-hands" className="panel mb-8 scroll-mt-6 overflow-hidden" aria-labelledby="hands-title">
+      <div className="px-5 pt-5 sm:px-8 sm:pt-7">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">What we saw</p>
+        <h2 id="hands-title" className="font-display text-2xl text-white print-dark">Your hands</h2>
+        <p className="mt-1 text-sm text-violet-200/90 print-dark">
+          {role}
+          <span className="text-violet-300/60 print:hidden"> · switch hands with the <span className="lg:hidden">buttons at the bottom</span><span className="hidden lg:inline">panel on the left</span></span>
+        </p>
       </div>
 
       <div className="grid gap-5 p-5 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] sm:p-8">
@@ -238,8 +282,7 @@ function HandsHero({
               <figcaption className="mt-1.5 text-center text-xs text-violet-300/70">The lines we read</figcaption>
             </figure>
           </div>
-          {role && <p className="mt-3 text-center text-sm font-bold text-violet-100 print-dark">{role}</p>}
-          {shape.length > 0 && <p className="mt-1 text-center text-sm text-violet-300/80 print-muted">{shape.join(' · ')}</p>}
+          {shape.length > 0 && <p className="mt-3 text-center text-sm text-violet-300/80 print-muted">{shape.join(' · ')}</p>}
         </div>
 
         <div>
@@ -314,17 +357,31 @@ function HandDetails({ hand }: { hand: HandObservation }) {
   );
 }
 
-function Segmented({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+function Segmented({
+  label,
+  value,
+  options,
+  onChange,
+  vertical = false,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+  vertical?: boolean;
+}) {
   if (options.length < 2) return null;
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl border border-white/10 bg-night-900/60 p-1">
+    <div role="radiogroup" aria-label={label} className={`inline-flex rounded-xl border border-white/10 bg-night-900/60 p-1 ${vertical ? 'flex-col' : ''}`}>
       {options.map((o) => (
         <button
           key={o.value}
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`rounded-lg px-3 py-1.5 text-sm font-bold transition ${o.value === value ? 'bg-gold-400 text-night-900' : 'text-violet-200 hover:text-white'}`}
+          className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold transition ${vertical ? 'text-left' : ''} ${
+            o.value === value ? 'bg-gold-400 text-night-900' : 'text-violet-200 hover:text-white'
+          }`}
         >
           {o.label}
         </button>
@@ -335,7 +392,7 @@ function Segmented({ label, value, options, onChange }: { label: string; value: 
 
 function AtAGlance({ traits }: { traits: Reading['traits'] }) {
   return (
-    <section className="mb-10" aria-labelledby="glance-title">
+    <section id="s-glance" className="mb-10 scroll-mt-6" aria-labelledby="glance-title">
       <h2 id="glance-title" className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">At a glance</h2>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {traits.map((t) => {
@@ -418,11 +475,16 @@ function SectionCard({ section: s, hand }: { section: ReadingSection; hand?: Han
   );
 }
 
-/** Section shortcuts that stay at the bottom of the screen while the sections scroll by. */
-function SectionNav({ items }: { items: { id: string; label: string; color?: string }[] }) {
-  const [active, setActive] = useState(items[0]?.id);
-  const bar = useRef<HTMLDivElement>(null);
+interface NavItem {
+  id: string;
+  label: string;
+  color?: string;
+  lines?: LineKey[];
+}
 
+/** The id of the section in the middle band of the screen. */
+function useActiveSection(items: NavItem[]) {
+  const [active, setActive] = useState(items[0]?.id);
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -437,37 +499,72 @@ function SectionNav({ items }: { items: { id: string; label: string; color?: str
     }
     return () => observer.disconnect();
   }, [items]);
+  return active;
+}
 
+function jump(e: MouseEvent, id: string) {
+  e.preventDefault();
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  history.replaceState(null, '', `#${id}`);
+}
+
+/** Desktop: section links in the left sidebar. */
+function SideNav({ items, active }: { items: NavItem[]; active?: string }) {
+  return (
+    <nav aria-label="Reading sections">
+      <p className="mb-2 px-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400">Sections</p>
+      <ul className="space-y-0.5">
+        {items.map((i) => (
+          <li key={i.id}>
+            <a
+              href={`#${i.id}`}
+              aria-current={active === i.id ? 'true' : undefined}
+              onClick={(e) => jump(e, i.id)}
+              className={`flex items-center gap-2 rounded-lg border-l-2 px-3 py-1.5 text-sm transition ${
+                active === i.id ? 'border-gold-400 bg-white/8 font-bold text-white' : 'border-transparent text-violet-300/80 hover:text-white'
+              }`}
+            >
+              <Dot color={i.color ?? 'rgb(255 255 255 / 0.2)'} />
+              {i.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/** Phone and tablet: hand picker and section shortcuts that stay at the bottom of the screen. */
+function BottomNav({ items, active, pick }: { items: NavItem[]; active?: string; pick: HandPick }) {
+  const bar = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = bar.current?.querySelector<HTMLElement>(`[data-id="${active}"]`);
     if (el && bar.current) bar.current.scrollTo({ left: el.offsetLeft - bar.current.clientWidth / 2 + el.clientWidth / 2, behavior: 'smooth' });
   }, [active]);
 
   return (
-    <nav aria-label="Reading sections" className="sticky bottom-3 z-20 mt-6 print:hidden">
-      <div
-        ref={bar}
-        className="flex gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-night-900/90 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {items.map((i) => (
-          <a
-            key={i.id}
-            href={`#${i.id}`}
-            data-id={i.id}
-            aria-current={active === i.id ? 'true' : undefined}
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById(i.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              setActive(i.id);
-            }}
-            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition ${
-              active === i.id ? 'bg-white/12 text-white' : 'text-violet-300/80 hover:text-white'
-            }`}
-          >
-            {i.color && <Dot color={i.color} />}
-            {i.label}
-          </a>
-        ))}
+    <nav aria-label="Reading sections" className="sticky bottom-3 z-20 mt-6 lg:hidden print:hidden">
+      <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-night-900/90 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-md">
+        <div className="shrink-0 [&_button]:px-2.5 [&_button]:py-1 [&_button]:text-xs">
+          <HandPicker pick={pick} compact />
+        </div>
+        <div ref={bar} className="flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {items.map((i) => (
+            <a
+              key={i.id}
+              href={`#${i.id}`}
+              data-id={i.id}
+              aria-current={active === i.id ? 'true' : undefined}
+              onClick={(e) => jump(e, i.id)}
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold transition ${
+                active === i.id ? 'bg-white/12 text-white' : 'text-violet-300/80 hover:text-white'
+              }`}
+            >
+              {i.color && <Dot color={i.color} />}
+              {i.label}
+            </a>
+          ))}
+        </div>
       </div>
     </nav>
   );

@@ -54,7 +54,7 @@ export default function SavedReadingView() {
   const photos: ResultPhoto[] = data.photosDeletedAt ? [] : data.photoSlots.map((slot) => ({ slot, url: photoUrl(id, slot), label: photoLabel(slot, data) }));
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6">
+    <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 lg:max-w-6xl">
       <Results
         saved={{
           mode: data.mode,

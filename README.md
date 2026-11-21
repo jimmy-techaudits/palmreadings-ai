@@ -40,8 +40,10 @@ Comfortaa UI text, Nunito Sans for long reading text.
      finger shape), not traced from the photo; it says so on the page;
    - **At a glance**: 4–6 named traits, each tagged with the line it comes from;
    - section cards, each with a short name (e.g. "The Steady Anchor"), 2–3 tags, the lines it is read
-     from (color-coded, with a mini hand diagram) and short paragraphs; a section bar stays at the
-     bottom of the screen while scrolling;
+     from (color-coded, with a mini hand diagram) and short paragraphs;
+   - navigation: on desktop a sticky left sidebar holds the Left/Right (and, for couples, person)
+     picker plus section links; on phones and tablets the same controls sit in a bar that stays at the
+     bottom of the screen. The picker drives every hand diagram on the page;
    - family predictions (if opted in), action steps, mantra, print-to-PDF, feedback.
 
    Each line has one color everywhere (`LINE_COLORS` in `observationText.ts`). The reading never shows
