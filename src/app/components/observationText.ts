@@ -21,12 +21,12 @@ export const LINE_MEANINGS: Record<LineKey, string> = {
 
 /** One color per line, used on the hand diagrams, legends, traits and sections. */
 export const LINE_COLORS: Record<LineKey, string> = {
-  heart: '#fb7185',
-  head: '#fec878',
-  life: '#5eead4',
-  fate: '#d8b4fe',
-  sun: '#bef264',
-  mercury: '#7dd3fc',
+  heart: '#f28ba8',
+  head: '#f6c77f',
+  life: '#6ee7c8',
+  fate: '#c4a6ff',
+  sun: '#c6e66e',
+  mercury: '#8fb8ff',
 };
 
 /** Plain descriptors for an observed line, e.g. ["Long", "Deep", "Strongly curved"]. Empty if not visible. */

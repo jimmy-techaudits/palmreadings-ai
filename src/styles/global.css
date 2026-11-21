@@ -1,22 +1,80 @@
 @import 'tailwindcss';
 
-/* Brand tokens carried over from the WordPress site (GeneratePress palette). */
+/*
+ * "Celestial modern" design system (redesign handoff, Nov 2026).
+ * Token values come from the handoff's tokens.css; names keep the existing Tailwind theme names
+ * (night-*, gold-*, plum-*, lavender-*) so utilities like bg-night-950 and text-gold-400 still work.
+ */
 @theme {
   --font-display: 'Cinzel', Georgia, serif;
-  --font-sans: 'Comfortaa', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Long-form reading text: easier to read than Comfortaa at length. */
-  --font-read: 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Italic accent words, quotes and phase labels. */
+  --font-accent: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Long-form reading text. Same family as the UI since the redesign. */
+  --font-read: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  --color-night-950: #040713;
-  --color-night-900: #0b0a1f;
-  --color-night-800: #171233;
-  --color-plum-900: #221547;
+  /* Nothing on the site is smaller than 14px: text-xs is 14px, text-sm 15px. */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
+
+  /* Grounds */
+  --color-night-950: #06060f; /* page background */
+  --color-night-900: #0a0819; /* alternate section band */
+  --color-night-850: #0b0920; /* section gradient start, select background */
+  --color-night-800: #14102c;
+
+  /* Brand */
+  --color-gold-300: #fad9a2;
+  --color-gold-400: #f6c77f;
+  --color-gold-500: #f2bc6b;
+  --color-plum-900: #1a0b2e; /* text on gold */
   --color-plum-800: #231547;
+  --color-royal-700: #6e34c8; /* glow source */
   --color-royal-800: #581c87;
-  --color-lavender-300: #d8b4fe;
-  --color-gold-300: #fed79b;
-  --color-gold-400: #fec878;
-  --color-gold-500: #fdbb5a;
+  --color-lavender-300: #c9b8f0;
+
+  /* Text scale (lavender-tinted off-white) */
+  --color-ink: #ede7ff;
+  --color-ink-strong: #ffffff;
+  --color-ink-soft: #d9d0f5;
+  --color-ink-muted: #b3a9d6;
+  --color-ink-subtle: #a99fcb;
+  --color-ink-faint: #8f85b5; /* 14px fine print only */
+
+  /* Palm line colors: the same everywhere a line is mentioned. */
+  --color-line-heart: #f28ba8;
+  --color-line-head: #f6c77f;
+  --color-line-life: #6ee7c8;
+  --color-line-fate: #c4a6ff;
+  --color-line-sun: #c6e66e;
+  --color-line-mercury: #8fb8ff;
+
+  /* Visibility states */
+  --color-vis-clear: #6ee7c8;
+  --color-vis-faint: #f6c77f;
+  --color-vis-none: #a99fcb;
+
+  --radius-card-lg: 28px;
+  --radius-card: 24px;
+  --radius-card-sm: 18px;
+  --radius-input: 14px;
+
+  --shadow-gold: 0 0 0 1px rgba(250, 217, 162, 0.4), 0 10px 34px rgba(246, 199, 127, 0.25);
+  --shadow-gold-strong: 0 0 0 1px rgba(250, 217, 162, 0.55), 0 14px 44px rgba(246, 199, 127, 0.38);
+  --shadow-panel: 0 40px 100px rgba(60, 20, 120, 0.3);
+}
+
+:root {
+  --color-surface: rgba(20, 16, 44, 0.6); /* default card */
+  --color-surface-raised: rgba(30, 20, 66, 0.85); /* featured card, form panel top */
+  --color-surface-inset: rgba(6, 6, 15, 0.6); /* inputs, inner cards */
+  --color-border: rgba(201, 184, 240, 0.16);
+  --color-border-soft: rgba(201, 184, 240, 0.12);
+  --color-border-gold: rgba(246, 199, 127, 0.35);
+  --gradient-gold: linear-gradient(180deg, #fbdda8, #f2bc6b);
+  --focus-ring: 0 0 0 4px rgba(246, 199, 127, 0.15);
 }
 
 html {
@@ -26,44 +84,128 @@ html {
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgb(88 28 135 / 0.45), transparent 70%),
-    var(--color-night-950);
-  color: rgb(237 233 254);
+  background: var(--color-night-950);
+  color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Header and footer gradients from the WordPress theme. */
-.bg-brand-header {
-  background-image: linear-gradient(190deg, var(--color-royal-800) 0%, var(--color-night-950) 100%);
-}
-.bg-brand-footer {
-  background-image: linear-gradient(359deg, var(--color-night-950) 0%, var(--color-royal-800) 100%);
-}
-.bg-brand-band {
-  background-image: linear-gradient(317deg, var(--color-royal-800) 0%, var(--color-night-950) 100%);
+/* Visible focus everywhere: gold outline plus a soft ring. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-gold-400);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
+/* Italic Cormorant accent word inside a Cinzel heading: "Your hands have been writing your <em class="accent">story</em>". */
+.accent {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--color-gold-400);
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-gold-400);
+}
+
+/* Reusable starfield texture (layer over night-950). */
+.starfield {
+  background-image:
+    radial-gradient(1px 1px at 24px 36px, rgba(255, 255, 255, 0.9), transparent 60%),
+    radial-gradient(1px 1px at 140px 90px, rgba(255, 255, 255, 0.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 210px 170px, rgba(250, 217, 162, 0.9), transparent 60%),
+    radial-gradient(1px 1px at 70px 200px, rgba(201, 184, 240, 0.8), transparent 60%),
+    radial-gradient(1px 1px at 300px 40px, rgba(255, 255, 255, 0.7), transparent 60%),
+    radial-gradient(1px 1px at 330px 250px, rgba(255, 255, 255, 0.5), transparent 60%);
+  background-size: 360px 300px;
+}
+
+/* Default card: translucent violet with a faint lavender border. */
 .panel {
-  background: rgb(255 255 255 / 0.04);
-  border: 1px solid rgb(255 255 255 / 0.09);
-  border-radius: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.panel-raised {
+  background: linear-gradient(180deg, var(--color-surface-raised), rgba(20, 16, 44, 0.7));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-panel);
 }
 
-/* Legal and long-form pages. */
+/* Buttons. Primary: gold pill. Ghost: outlined pill. Both at least 44px tall. */
+.btn-gold,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+.btn-gold {
+  background: var(--gradient-gold);
+  color: var(--color-plum-900);
+  box-shadow: var(--shadow-gold);
+}
+.btn-gold:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-gold-strong);
+}
+.btn-ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(201, 184, 240, 0.28);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(201, 184, 240, 0.1);
+}
+.btn-gold:disabled,
+.btn-ghost:disabled {
+  background: rgba(201, 184, 240, 0.08);
+  color: var(--color-ink-subtle);
+  box-shadow: none;
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+/* Soft purple glow behind hero areas; place inside a relative parent with aria-hidden. */
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 50% 0%, rgba(110, 52, 200, 0.35), transparent 70%),
+    radial-gradient(40% 40% at 85% 30%, rgba(124, 58, 237, 0.18), transparent 70%);
+}
+
+/* Legacy long-form styles (legal pages restyle these). */
 .prose-page h2 {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-weight: 500;
+  font-size: 1.625rem;
   color: #fff;
-  margin: 2.25rem 0 0.75rem;
+  margin: 2.5rem 0 0.75rem;
 }
 .prose-page p,
 .prose-page li {
-  font-family: var(--font-read);
-  font-size: 1.05rem;
-  line-height: 1.75;
-  color: rgb(221 214 254);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--color-ink-soft);
 }
 .prose-page p + p {
   margin-top: 1rem;
@@ -84,6 +226,20 @@ body {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .btn-gold:hover:not(:disabled) {
+    transform: none;
+  }
 }
 
 @media print {

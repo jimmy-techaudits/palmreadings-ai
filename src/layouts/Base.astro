@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { GA_ID, IMAGES } from '../site';
+import { CONTACT_EMAIL, GA_ID, IMAGES } from '../site';
 
 interface Props {
   title: string;
@@ -16,7 +16,9 @@ const nav = [
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
 ];
+const current = Astro.url.pathname;
 const year = new Date().getFullYear();
+const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
 ---
 
 <!doctype html>
@@ -33,13 +35,13 @@ const year = new Date().getFullYear();
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={new URL(IMAGES.logo, Astro.site).toString()} />
-    <meta name="theme-color" content="#040713" />
+    <meta name="theme-color" content="#06060f" />
     <link rel="icon" type="image/png" sizes="32x32" href={IMAGES.favicon} />
     <link rel="apple-touch-icon" href={IMAGES.appleTouchIcon} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Comfortaa:wght@400;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
     <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
@@ -52,27 +54,40 @@ const year = new Date().getFullYear();
     </script>
   </head>
   <body class="flex min-h-screen flex-col">
-    <header class="bg-brand-header border-b border-white/5 print:hidden">
-      <div class="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-4 sm:h-24 sm:px-6">
-        <a href="/" aria-label="Palm Readings AI home" class="shrink-0">
-          <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" class="h-14 w-auto sm:h-20" />
+    <header class="relative z-30 border-b border-white/[0.08] bg-[linear-gradient(180deg,rgba(28,14,58,0.92),rgba(10,8,24,0.88))] print:hidden">
+      <div class="mx-auto flex max-w-[1200px] items-center justify-between gap-x-6 gap-y-4 px-4 py-3.5 sm:px-8">
+        <a href="/" aria-label="Palm Readings AI home" class="flex shrink-0 items-center rounded-lg">
+          <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" class="block h-12 w-auto sm:h-16" />
         </a>
-        <nav class="flex items-center gap-1 sm:gap-4" aria-label="Main">
+        <nav class="flex items-center gap-1.5" aria-label="Main">
           {nav.map((n) => (
-            <a href={n.href} class="hidden rounded-lg px-3 py-2 font-bold text-white/90 hover:text-gold-400 sm:inline-block">{n.label}</a>
+            <a
+              href={n.href}
+              aria-current={current === n.href ? 'page' : undefined}
+              class:list={[
+                'hidden min-h-11 items-center rounded-full px-4 py-2.5 text-base font-medium sm:inline-flex',
+                current === n.href ? 'bg-gold-400/10 text-gold-300' : 'text-[#e4dcfa] hover:text-white',
+              ]}
+            >
+              {n.label}
+            </a>
           ))}
           {!hideCta && (
-            <a
-              href="/reading/?new=1"
-              class="rounded-[10px] border-[3px] border-gold-400 bg-gold-400 px-4 py-2 text-sm font-bold text-plum-900 transition hover:border-gold-500 hover:bg-gold-500 sm:text-base"
-            >
+            <a href="/reading/?new=1" class="btn-gold ml-1 shrink-0 whitespace-nowrap px-4 py-2.5 text-base sm:ml-2.5 sm:px-[22px]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={sparkle} /></svg>
               Start a Reading
             </a>
           )}
           <details class="relative sm:hidden">
-            <summary class="cursor-pointer list-none rounded-lg px-3 py-2 font-bold text-white" aria-label="Menu">☰</summary>
-            <div class="absolute right-0 z-20 mt-2 flex w-40 flex-col rounded-xl border border-white/10 bg-night-900 p-2 shadow-xl">
-              {nav.map((n) => <a href={n.href} class="rounded-lg px-3 py-2 text-white hover:bg-white/5">{n.label}</a>)}
+            <summary class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-full text-white [&::-webkit-details-marker]:hidden" aria-label="Menu">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+            </summary>
+            <div class="absolute right-0 z-40 mt-2 flex w-44 flex-col rounded-[18px] border border-white/10 bg-night-900 p-2 shadow-xl">
+              {nav.map((n) => (
+                <a href={n.href} class:list={['flex min-h-11 items-center rounded-xl px-3', current === n.href ? 'bg-gold-400/10 text-gold-300' : 'text-ink hover:bg-white/5']}>
+                  {n.label}
+                </a>
+              ))}
             </div>
           </details>
         </nav>
@@ -83,31 +98,40 @@ const year = new Date().getFullYear();
       <slot />
     </main>
 
-    <footer class="print:hidden">
-      <div class="bg-brand-footer border-t border-royal-800">
-        <div class="mx-auto grid max-w-6xl items-center gap-10 px-[5%] py-10 text-center md:grid-cols-3 md:px-6">
-          <div class="flex flex-col items-center gap-5">
-            <a href="/"><img src={IMAGES.logo} alt="Palm Readings AI logo" width="700" height="300" loading="lazy" class="w-60 max-w-full" /></a>
-            <a href="/reading/?new=1" class="rounded-[10px] bg-gold-400 px-4 py-2 text-lg font-bold text-plum-900 transition hover:-translate-y-0.5 hover:bg-gold-500">
-              Get a New Reading
+    <footer class="relative border-t border-white/[0.09] bg-[radial-gradient(70%_120%_at_50%_0%,rgba(74,31,122,0.55),rgba(5,5,12,1)_70%)] text-base leading-relaxed print:hidden">
+      <div class="mx-auto max-w-[1200px] px-4 pb-10 pt-[72px] sm:px-8">
+        <div class="grid gap-10 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
+          <div>
+            <a href="/" aria-label="Palm Readings AI home" class="inline-block rounded-lg">
+              <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" loading="lazy" class="block h-auto w-[210px]" />
             </a>
           </div>
-          <div class="flex flex-col items-center gap-2 text-lg">
-            <p class="mb-1 font-bold text-white">Company</p>
-            <a href="/about/" class="text-lavender-300 underline hover:text-gold-400">About Us</a>
-            <a href="/contact/" class="text-lavender-300 underline hover:text-gold-400">Contact</a>
+          <div>
+            <p class="mb-3.5 font-display text-base tracking-[0.1em] text-gold-400">Explore</p>
+            <ul class="flex flex-col gap-2.5">
+              <li><a href="/reading/?new=1" class="text-ink-soft hover:text-white">Start a reading</a></li>
+              <li><a href="/about/" class="text-ink-soft hover:text-white">About us</a></li>
+              <li><a href="/contact/" class="text-ink-soft hover:text-white">Contact</a></li>
+            </ul>
           </div>
-          <p class="text-sm italic leading-relaxed text-lavender-300 md:text-left">
-            Readings provided by PalmReadings.ai are generated using artificial intelligence and are intended for informational
-            and reflective purposes only. Interpretations are not guaranteed to be accurate and should not be considered
-            professional, medical, legal, or financial advice. Individual experiences may vary.
-          </p>
+          <div>
+            <p class="mb-3.5 font-display text-base tracking-[0.1em] text-gold-400">Legal</p>
+            <ul class="flex flex-col gap-2.5">
+              <li><a href="/privacy-policy/" class="text-ink-soft hover:text-white">Privacy Policy</a></li>
+              <li><a href="/terms/" class="text-ink-soft hover:text-white">Terms of Use</a></li>
+            </ul>
+          </div>
+          <div>
+            <p class="mb-3.5 font-display text-base tracking-[0.1em] text-gold-400">Say hello</p>
+            <a href={`mailto:${CONTACT_EMAIL}`} class="text-gold-300 underline-offset-4 hover:underline">{CONTACT_EMAIL}</a>
+          </div>
         </div>
-      </div>
-      <div class="flex flex-col items-center justify-center gap-2 bg-night-950 px-[5%] py-5 text-sm text-white sm:flex-row sm:gap-6">
-        <span>© {year} Palm Readings AI - All Rights Reserved</span>
-        <a href="/privacy-policy/" class="text-lavender-300 underline hover:text-gold-400">Privacy Policy</a>
-        <a href="/terms/" class="text-lavender-300 underline hover:text-gold-400">Terms of Use</a>
+        <p class="mt-14 max-w-[900px] border-t border-white/[0.08] pt-7 text-sm text-ink-subtle">
+          Readings provided by PalmReadings.ai are generated using artificial intelligence and are intended for informational and
+          reflective purposes only. Interpretations are not guaranteed to be accurate and should not be considered professional,
+          medical, legal, or financial advice. Individual experiences may vary.
+        </p>
+        <p class="mt-[18px] text-sm text-ink-faint">© {year} Palm Readings AI. All rights reserved.</p>
       </div>
     </footer>
   </body>

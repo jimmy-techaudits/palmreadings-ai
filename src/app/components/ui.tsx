@@ -3,10 +3,11 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 type Variant = 'primary' | 'secondary' | 'ghost';
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    'bg-gold-400 text-night-900 hover:bg-gold-300 disabled:bg-white/10 disabled:text-white/40 shadow-lg shadow-gold-500/10',
-  secondary: 'bg-white/8 text-violet-50 border border-white/15 hover:bg-white/12',
-  ghost: 'text-violet-200 hover:text-white hover:bg-white/5',
+  // Gold pill (the main action) and outlined pill; styles live in global.css.
+  primary: 'btn-gold px-7 py-3.5 text-lg',
+  secondary: 'btn-ghost px-6 py-3 text-base',
+  // Text link, e.g. "Back".
+  ghost: 'min-h-11 rounded-full px-3 py-2 font-medium text-ink-soft hover:text-white disabled:opacity-50',
 };
 
 export function Button({
@@ -14,12 +15,7 @@ export function Button({
   className = '',
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
-  return (
-    <button
-      {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-bold transition disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400 ${VARIANTS[variant]} ${className}`}
-    />
-  );
+  return <button {...props} className={`inline-flex items-center justify-center gap-2 ${VARIANTS[variant]} ${className}`} />;
 }
 
 export function StepHeader({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: ReactNode }) {
