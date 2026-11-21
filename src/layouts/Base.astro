@@ -201,7 +201,9 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
         var stored = null;
         try { stored = localStorage.getItem('pr_consent'); } catch (e) {}
         var required = document.documentElement.getAttribute('data-consent') === 'required';
-        if (required && !stored) banner.hidden = false;
+        // ?consent_region=1 shows the banner even if a choice was already made (for checking it).
+        var forced = /[?&]consent_region=1(&|$)/.test(location.search);
+        if ((required && !stored) || forced) banner.hidden = false;
         document.querySelectorAll('[data-consent-choice]').forEach(function (b) {
           b.addEventListener('click', function () {
             var choice = b.getAttribute('data-consent-choice');

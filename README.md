@@ -221,8 +221,9 @@ Google Analytics runs with Consent Mode (`src/layouts/Base.astro`). Its advertis
 everyone. Visitors from the EU/EEA, UK and Switzerland (`shared/consent.ts`) get no analytics cookies until
 they accept: the Worker marks their pages with `data-consent="required"` using Cloudflare's country, which
 shows the cookie banner. Browsers sending Global Privacy Control get no analytics cookies. The "Cookie
-settings" link in the footer reopens the banner for anyone. To see the banner locally, add
-`?consent_region=1` to a page address.
+settings" link in the footer reopens the banner for anyone. To see the banner from anywhere (locally, on
+workers.dev or on the live site), add `?consent_region=1` to a page address, e.g.
+`https://palmreadings.ai/?consent_region=1`.
 - Content ideas with real search volume (US, Semrush, Nov 2026): palm reading lines (12,100/month), palm
   lines meaning (2,400), read my palm (880), palm reading love line (880), palm reading marriage line (720,
   low difficulty), life line (590), fate line (590), heart line (390). Guides on each line would be the

@@ -44,14 +44,13 @@ async function routePayments(request: Request, env: Env, ctx: ExecutionContext, 
 
 /**
  * Marks HTML pages for visitors from countries where analytics cookies need consent first, so the page
- * shows the cookie banner. Locally, add ?consent_region=1 to try it.
+ * shows the cookie banner. Add ?consent_region=1 to any page address to see the banner from anywhere.
  */
 function markConsentRegion(request: Request, res: Response): Response {
   if (!res.headers.get('content-type')?.includes('text/html')) return res;
   const url = new URL(request.url);
   const country = (request as Request & { cf?: { country?: string } }).cf?.country;
-  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-  const required = (country && CONSENT_REGIONS.includes(country)) || (local && url.searchParams.get('consent_region') === '1');
+  const required = (country && CONSENT_REGIONS.includes(country)) || url.searchParams.get('consent_region') === '1';
   if (!required) return res;
   return new HTMLRewriter()
     .on('html', {
