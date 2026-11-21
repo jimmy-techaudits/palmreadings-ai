@@ -60,6 +60,7 @@ export default function SavedReadingView() {
           mode: data.mode,
           focus: data.focus,
           names: data.people.map((p) => p.name ?? ''),
+          dominantHands: data.people.map((p) => p.dominantHand),
           reading: data.reading,
           observations: data.observations,
           createdAt: data.createdAt,

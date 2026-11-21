@@ -137,6 +137,7 @@ export default function App() {
               mode,
               focus,
               names: people.map((p) => p.name.trim()),
+              dominantHands: people.map((p) => p.dominantHand!),
               reading: e.reading,
               observations: obs,
               createdAt: new Date().toISOString(),

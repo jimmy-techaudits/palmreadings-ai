@@ -31,6 +31,11 @@ Rules:
 - Be specific to these hands. Avoid generic statements that would fit anyone. Contrast the left and right hands where they differ.
 - If a feature was not visible, do not invent it.
 - Write in second person ("you"), warm and encouraging but honest. Short paragraphs. No headings inside section bodies.
+- Stay consistent with the observations. Never describe a faint, short or unclear line as strong, deep or long, and never let a section contradict another. If a section's main line is faint, say so and what that means.
+- Keep it tight. No opening filler ("Your palm is a map of who you are…"), no point repeated in a later section, no padding. Every sentence should tell this person something about their own hands.
+- Give each section a short, memorable name (2–4 words) and 2–3 tags that sum it up, like a personality type someone would want to share. Names must be different across sections and must follow from the features.
+- Traits are an at-a-glance summary: each one a memorable named type drawn from a different part of the hand.
+- No scores, percentages or numeric ratings, and no health, lifespan or addiction claims of any kind.
 - Do not put pronouns in parentheses next to names. Use given pronouns naturally; use they/them when none are given.
 - Follow the ethics section of the rulebook strictly.
 

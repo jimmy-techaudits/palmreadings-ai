@@ -2,6 +2,8 @@
 // providers accept in strict mode: every object lists all properties as required
 // and sets additionalProperties: false.
 
+import { LINE_KEYS } from '../shared/types';
+
 type Schema = Record<string, unknown>;
 
 const str = (description?: string): Schema => (description ? { type: 'string', description } : { type: 'string' });
@@ -86,12 +88,22 @@ export function readingSchema(sectionIds: string[], includeFamily: boolean): Sch
   const properties: Record<string, Schema> = {
     headline: str('One evocative line (max ~12 words) capturing the essence of the reading.'),
     summary: str('An opening paragraph (3–5 sentences) that is specific to these hands.'),
-    traits: arr(obj({ label: str('e.g. "Element", "Love style", "Work style", "Superpower"'), value: str('2–4 words') }), '4 to 6 at-a-glance traits.'),
+    traits: arr(
+      obj({
+        label: str('A category, e.g. "Element", "Emotional type", "Thinking style", "Work style", "Superpower".'),
+        value: str('A memorable 1–4 word answer specific to these hands, e.g. "The Quiet Strategist". Not a generic adjective.'),
+        line: enumOf([...LINE_KEYS, 'none'], 'The line this trait mostly comes from; "none" for hand shape, fingers, thumb or mounts.'),
+      }),
+      '4 to 6 at-a-glance traits, each from a different part of the hand.',
+    ),
     sections: arr(
       obj({
         id: enumOf(sectionIds),
-        title: str(),
-        body: str('2–4 short paragraphs separated by blank lines. **bold** allowed. No headings.'),
+        title: str('The section title exactly as given.'),
+        name: str('A short, memorable name (2–4 words) for what this section found, e.g. "The Steady Anchor" or "Late-Blooming Leader". Specific to these hands; never reuse a name across sections.'),
+        tags: arr(str('One or two words, e.g. "Loyal", "Slow to trust".'), '2 or 3 qualities that sum up this section.'),
+        lines: arr(enumOf([...LINE_KEYS]), 'The 1–3 lines this section is mainly read from. Only lines that were visible. Empty if it rests on hand shape, fingers or mounts only.'),
+        body: str('2–3 short paragraphs (each 2–4 sentences) separated by blank lines. **bold** allowed. No headings. No filler that would fit anyone.'),
         evidence: arr(str(), '1–4 short notes of the observed features this section is based on, e.g. "Curved heart line ending under the index finger".'),
       }),
       'Exactly the requested sections, in the requested order.',

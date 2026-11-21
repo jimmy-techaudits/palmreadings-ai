@@ -1,6 +1,6 @@
 // Offline provider for UI development and tests: returns canned, schema-shaped
 // data after a short delay. Select it with AI_PROVIDER=mock (the default).
-import type { HandObservation, LineObservation, PersonObservation, Reading } from '../../shared/types';
+import type { HandObservation, LineObservation, PersonObservation, Reading, ReadingSection } from '../../shared/types';
 import type { JsonRequest, Provider } from './types';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -58,25 +58,80 @@ function mockObservation(req: JsonRequest): PersonObservation {
   };
 }
 
+type MockSection = Pick<ReadingSection, 'name' | 'tags' | 'lines' | 'body' | 'evidence'>;
+
+const MOCK_SECTIONS: Record<string, MockSection> = {
+  personality: {
+    name: 'The Feeling Strategist',
+    tags: ['Intuitive', 'Composed', 'Deep'],
+    lines: ['head', 'heart'],
+    body: 'Your **long, rectangular palm and long fingers** make yours a water hand: you take in more than most people notice, and you think before you speak.\n\nYour head line starts joined to your life line and ends in a **writer\u2019s fork**. You weigh things carefully before you move, and once you do, you can explain your thinking in a way people follow.',
+    evidence: ['Water hand: rectangular palm, long fingers', 'Head line joined to the life line', 'Writer\u2019s fork at the end of the head line'],
+  },
+  potential_vs_path: {
+    name: 'From Dreamer to Driver',
+    tags: ['Growing', 'Self-made'],
+    lines: ['fate', 'heart'],
+    body: 'The biggest difference between your hands is the **fate line**. On your left hand it is faint; on your right it is clear and rises from your life line. You were not handed a direction. You built one, mostly on your own terms.\n\nThe small chain at the start of your left heart line has smoothed out on your right hand: early sensitivity that you have turned into steadiness.',
+    evidence: ['Fate line faint on the left hand, clear on the right', 'Chain at the start of the left heart line only'],
+  },
+  love: {
+    name: 'The Devoted Romantic',
+    tags: ['Warm', 'Expressive', 'All-in'],
+    lines: ['heart'],
+    body: 'Your **heart line curves strongly upward** and ends between your index and middle fingers. You love openly and say so, but you also know where your limits are.\n\nA prominent Venus mount adds warmth and physical affection. When you commit, people feel it.',
+    evidence: ['Strongly curved heart line ending between index and middle fingers', 'Prominent Venus mount'],
+  },
+  career: {
+    name: 'The Creative Lead',
+    tags: ['Strategic', 'Communicator'],
+    lines: ['head', 'fate', 'sun'],
+    body: 'With a **prominent Jupiter mount** on your dominant hand and an index finger longer than your ring finger, you are comfortable taking the lead.\n\nThe faint sun line and the triangle below your ring finger point to recognition through something you make or shape, not through status alone.',
+    evidence: ['Prominent Jupiter mount on the right hand', 'Faint sun line', 'Triangle below the ring finger'],
+  },
+  energy: {
+    name: 'Slow-Burn Stamina',
+    tags: ['Resilient', 'Needs quiet'],
+    lines: ['life'],
+    body: 'Your **life line is long and deep** with a branch rising toward your index finger: steady energy and a period of growth you went after on purpose.\n\nYou recharge best alone. Protect that time and you can keep going long after others stop.',
+    evidence: ['Long, deep life line', 'Branch rising from the life line toward the index finger'],
+  },
+  turning_points: {
+    name: 'The Mid-Life Pivot',
+    tags: ['Late bloomer', 'Intentional'],
+    lines: ['fate', 'life'],
+    body: 'Your fate line only becomes clear from mid-palm, which on the timing scale is **around your early 30s**. That is when your direction firmed up.\n\nIt runs up to your heart line, suggesting the next turning point is about what you care about rather than what you earn.',
+    evidence: ['Fate line starting mid-palm from the life line', 'Fate line ending at the heart line'],
+  },
+};
+
+const FALLBACK: MockSection = {
+  name: 'The Balanced Giver',
+  tags: ['Warm', 'Grounded'],
+  lines: ['heart'],
+  body: 'Your **heart line curves strongly upward** and ends between your index and middle fingers, which points to a balanced giver: openly affectionate, but grounded enough to protect your energy.\n\nOn your non-dominant hand the line starts with a small chain, a sign of early emotional sensitivity. On your dominant hand that chain has smoothed out, suggesting you have grown more secure in how you love.',
+  evidence: ['Strongly curved heart line ending between index and middle fingers', 'Chain at the start of the left heart line'],
+};
+
 function mockReading(req: JsonRequest): Reading {
   const props = req.schema.properties as Record<string, any>;
   const ids: string[] = props.sections.items.properties.id.enum;
   const reading: Reading = {
-    headline: 'A deep feeler with a strategist’s mind',
+    headline: 'A deep feeler with a strategist\u2019s mind',
     summary:
-      'Your hands tell the story of someone who feels everything deeply but has learned to lead with clarity. The long, curving heart line on both hands shows a generous, expressive heart, while your dominant hand’s stronger fate line and prominent Jupiter mount suggest you have been steadily building authority and direction.',
+      'You feel everything deeply but have learned to lead with clarity. The long, curving heart line on both hands shows a generous, expressive heart, while your dominant hand\u2019s stronger fate line and prominent Jupiter mount show you have been steadily building authority and direction.',
     traits: [
-      { label: 'Element', value: 'Water' },
-      { label: 'Love style', value: 'Warm and devoted' },
-      { label: 'Work style', value: 'Creative strategist' },
-      { label: 'Superpower', value: 'Reading the room' },
+      { label: 'Element', value: 'Water', line: 'none' },
+      { label: 'Emotional type', value: 'The Open Heart', line: 'heart' },
+      { label: 'Thinking style', value: 'Storyteller', line: 'head' },
+      { label: 'Energy', value: 'Slow-burn stamina', line: 'life' },
+      { label: 'Path', value: 'Self-made', line: 'fate' },
+      { label: 'Superpower', value: 'Reading the room', line: 'none' },
     ],
     sections: ids.map((id) => ({
       id,
       title: id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      body:
-        'Your **heart line curves strongly upward** and ends between your index and middle fingers, which points to a balanced giver: openly affectionate, but grounded enough to protect your energy.\n\nOn your non-dominant hand the line starts with a small chain, a sign of early emotional sensitivity. On your dominant hand that chain has smoothed out, suggesting you have grown more secure in how you love.',
-      evidence: ['Strongly curved heart line ending between index and middle fingers', 'Chain at the start of the left heart line'],
+      ...(MOCK_SECTIONS[id] ?? FALLBACK),
     })),
     action_steps: [
       'Block one evening this week for a creative project with no goal attached.',
@@ -87,7 +142,7 @@ function mockReading(req: JsonRequest): Reading {
   };
   if (props.family) {
     reading.family = {
-      marriages: { range: '1–2', confidence: 'medium', explanation: 'One long, deep relationship line in the middle of the palm edge, plus a shorter, fainter line nearer the heart line.' },
+      marriages: { range: '1\u20132', confidence: 'medium', explanation: 'One long, deep relationship line in the middle of the palm edge, plus a shorter, fainter line nearer the heart line.' },
       children: { range: '1', confidence: 'low', explanation: 'One fine vertical line rises from your main relationship line. These lines are delicate, so treat this lightly.' },
       timing: 'The deep middle line points to your most significant partnership forming roughly between your mid-20s and mid-30s.',
     };

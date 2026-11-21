@@ -84,11 +84,28 @@ export interface PersonObservation {
 
 // ---------- Stage 2: the written reading ----------
 
+/** The palm lines, in the order the hand diagram and legends show them. */
+export const LINE_KEYS = ['heart', 'head', 'life', 'fate', 'sun', 'mercury'] as const;
+export type LineKey = (typeof LINE_KEYS)[number];
+
 export interface ReadingSection {
   id: string;
   title: string;
+  /** Short memorable name for what this section found, e.g. "The Steady Anchor". Missing on readings made before Nov 2026. */
+  name?: string;
+  /** 2–3 one- or two-word qualities, e.g. "Loyal", "Slow to trust". */
+  tags?: string[];
+  /** The lines this section is mainly read from (used for color coding and the mini hand diagram). */
+  lines?: LineKey[];
   body: string;
   evidence: string[];
+}
+
+export interface Trait {
+  label: string;
+  value: string;
+  /** The line this trait mostly comes from, or "none" (hand shape, mounts, fingers). */
+  line?: LineKey | 'none';
 }
 
 export interface FamilyPrediction {
@@ -100,7 +117,7 @@ export interface FamilyPrediction {
 export interface Reading {
   headline: string;
   summary: string;
-  traits: { label: string; value: string }[];
+  traits: Trait[];
   sections: ReadingSection[];
   family?: {
     marriages: FamilyPrediction;

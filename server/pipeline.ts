@@ -57,12 +57,17 @@ export async function runReading(
     maxTokens: 16000,
   });
 
-  // Keep the planned order and titles even if the model drifts.
+  // Keep the planned order and titles even if the model drifts, and only point
+  // at lines that were actually seen so the hand diagrams never contradict the text.
+  const seen = new Set<string>(
+    observations.flatMap((o) => o.hands.flatMap((h) => Object.entries(h.lines).filter(([, l]) => l.visibility !== 'not_visible').map(([k]) => k))),
+  );
   const byId = new Map(reading.sections.map((s) => [s.id, s]));
   reading.sections = plan.flatMap((p) => {
     const s = byId.get(p.id);
-    return s ? [{ ...s, title: p.title }] : [];
+    return s ? [{ ...s, title: p.title, tags: s.tags?.slice(0, 3), lines: s.lines?.filter((l) => seen.has(l)) }] : [];
   });
+  reading.traits = reading.traits.map((t) => (t.line && t.line !== 'none' && !seen.has(t.line) ? { ...t, line: 'none' } : t));
 
   let id: string | null = null;
   try {

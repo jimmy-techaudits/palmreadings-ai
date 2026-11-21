@@ -20,7 +20,7 @@ Comfortaa UI text, Nunito Sans for long reading text.
    marriage & children predictions.
 3. **Photos** – both palms are always required. The pinky-side photo of the dominant hand becomes
    required when marriage & children predictions are on (that's where those lines are). Photos are
-   resized to ≤1600px JPEG in the browser and never stored.
+   resized to ≤1600px JPEG in the browser before upload.
 4. **Server pipeline** (`server/pipeline.ts`), streamed to the browser as progress events:
    - **Observe** – one vision call per person returns structured data on what is visible and flags
      unusable photos.
@@ -32,8 +32,20 @@ Comfortaa UI text, Nunito Sans for long reading text.
    deleted 3 years after the link was last opened** by a daily cron job (`expireOldPhotos` in
    `server/store.ts`). An optional checkbox records permission to use the photos in marketing; it can
    be changed later on the private link.
-6. **Results** – headline, traits, "What we saw in your hands", sections, family predictions (if opted
-   in), action steps, mantra, print-to-PDF, feedback.
+6. **Results** (`src/app/components/Results.tsx`), phone-first:
+   - headline and summary;
+   - **Your hands**: the palm photo next to a drawn diagram of that hand (`HandDiagram.tsx`), with
+     Left/Right tabs and a legend of the lines. The diagram is generated from the Observe step's
+     description (length, curve, start and end, depth, faintness, forks, branches, breaks, palm and
+     finger shape), not traced from the photo; it says so on the page;
+   - **At a glance**: 4–6 named traits, each tagged with the line it comes from;
+   - section cards, each with a short name (e.g. "The Steady Anchor"), 2–3 tags, the lines it is read
+     from (color-coded, with a mini hand diagram) and short paragraphs; a section bar stays at the
+     bottom of the screen while scrolling;
+   - family predictions (if opted in), action steps, mantra, print-to-PDF, feedback.
+
+   Each line has one color everywhere (`LINE_COLORS` in `observationText.ts`). The reading never shows
+   scores, percentages, or health, lifespan or addiction claims (see `server/prompts.ts`).
 
 ## Saved readings, deletion requests and stats
 
@@ -103,8 +115,7 @@ proxies /api) in another.
 Do these in order. Nothing changes for visitors until step 5.
 
 1. **Back up WordPress**: Tools → Export (done), plus a full EasyWP backup.
-2. **Copy the images** listed in `src/site.ts` into `public/images/` and set `IMAGE_BASE` to
-   `'/images'`. They currently load from the WordPress media library, which disappears with EasyWP.
+2. **Images**: done. All images are self-hosted in `public/images/`.
 3. **Add the domain to Cloudflare** (free plan). Cloudflare scans existing DNS; then check every
    record against Namecheap's Advanced DNS, especially the **Google Workspace email records**:
    the MX records, the SPF TXT (`v=spf1 include:_spf.google.com ~all`), DKIM (`google._domainkey`), DMARC

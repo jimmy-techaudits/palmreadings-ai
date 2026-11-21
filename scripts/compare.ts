@@ -230,10 +230,15 @@ function readingHtml(label: string, r: Result): string {
     <h3>${label} <span class="time">${r.seconds}s</span></h3>
     <h4 class="headline">${esc(rd.headline)}</h4>
     <p>${esc(rd.summary)}</p>
-    <p class="traits">${rd.traits.map((t) => `<span>${esc(t.label)}: <b>${esc(t.value)}</b></span>`).join('')}</p>
+    <p class="traits">${rd.traits.map((t) => `<span>${esc(t.label)}: <b>${esc(t.value)}</b>${t.line && t.line !== 'none' ? ` <small>(${t.line})</small>` : ''}</span>`).join('')}</p>
     <details><summary>What it saw in the photos</summary><ul class="obs">${hands}</ul></details>
     ${rd.sections
-      .map((s) => `<section><h5>${esc(s.title)}</h5>${prose(s.body)}<p class="ev">Based on: ${s.evidence.map(esc).join(' · ')}</p></section>`)
+      .map(
+        (s) =>
+          `<section><h5>${esc(s.title)}${s.name ? `: <i>${esc(s.name)}</i>` : ''}</h5>${
+            s.tags?.length ? `<p class="traits">${s.tags.map((t) => `<span>${esc(t)}</span>`).join('')}${s.lines?.length ? ` <small>lines: ${s.lines.join(', ')}</small>` : ''}</p>` : ''
+          }${prose(s.body)}<p class="ev">Based on: ${s.evidence.map(esc).join(' · ')}</p></section>`,
+      )
       .join('')}
     ${
       rd.family

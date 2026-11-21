@@ -1,11 +1,13 @@
 // Keeps the last reading in this tab so a refresh doesn't lose it.
 // Saved, shareable readings come in a later phase.
-import type { Focus, Mode, PersonObservation, Reading } from '../../../shared/types';
+import type { Focus, Hand, Mode, PersonObservation, Reading } from '../../../shared/types';
 
 export interface SavedReading {
   mode: Mode;
   focus: Focus;
   names: string[];
+  /** Each person's dominant hand (missing on readings kept from before Nov 2026). */
+  dominantHands?: Hand[];
   reading: Reading;
   observations: PersonObservation[];
   createdAt: string;
