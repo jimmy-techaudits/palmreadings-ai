@@ -11,9 +11,9 @@ interface Option {
 }
 
 const OPTIONS: Option[] = [
-  { mode: 'solo', focus: 'overall', title: 'Full Life Reading', description: 'Personality, love, career, energy and turning points, comparing both hands.', icon: Sparkles },
-  { mode: 'solo', focus: 'love', title: 'Love & Relationships', description: 'How you love, what you need, your patterns and your romantic timeline.', icon: Heart },
-  { mode: 'solo', focus: 'career', title: 'Career & Purpose', description: 'Your work style, drive, natural strengths and career turning points.', icon: Briefcase },
+  { mode: 'solo', focus: 'overall', title: 'Full Life Reading', description: 'Personality, love, marriage & family, career, money and your life timeline, comparing both hands.', icon: Sparkles },
+  { mode: 'solo', focus: 'love', title: 'Love & Relationships', description: 'How you love, what you need, your patterns, marriage & family and your timeline.', icon: Heart },
+  { mode: 'solo', focus: 'career', title: 'Career & Purpose', description: 'Your work style and drive, the careers that fit, money, and your timeline.', icon: Briefcase },
   { mode: 'couple', focus: 'overall', title: 'Couples Compatibility', description: 'Read both partners’ hands to see how you connect, clash and grow.', icon: Users },
 ];
 

@@ -1,5 +1,5 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { AlertCircle, ArrowLeft, Camera, Hand as HandIcon, Loader2, RefreshCw, ShieldCheck, Sparkles, Sun, X, ZoomIn } from 'lucide-react';
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { AlertCircle, ArrowLeft, Camera, Hand as HandIcon, ImageDown, Loader2, RefreshCw, ShieldCheck, Sparkles, Sun, X, ZoomIn } from 'lucide-react';
 import type { SlotSpec } from '../../../shared/plan';
 import type { Mode, SlotId } from '../../../shared/types';
 import { ImageLoadError, prepareImage } from '../lib/image';
@@ -35,6 +35,20 @@ export function StepPhotos({
   onBack, onSubmit,
 }: Props) {
   const ready = consent && botReady && slots.every((s) => !s.required || photos[s.slot]);
+
+  // A photo dropped next to a tile (instead of on it) would make the browser open the image and
+  // leave the page, losing everything entered so far. Swallow drops outside the tiles.
+  useEffect(() => {
+    const stop = (e: globalThis.DragEvent) => {
+      if (e.dataTransfer?.types.includes('Files')) e.preventDefault();
+    };
+    window.addEventListener('dragover', stop);
+    window.addEventListener('drop', stop);
+    return () => {
+      window.removeEventListener('dragover', stop);
+      window.removeEventListener('drop', stop);
+    };
+  }, []);
   const missing = slots.filter((s) => s.required && !photos[s.slot]).length;
 
   return (
@@ -133,6 +147,9 @@ function PhotoTile({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  // dragenter/dragleave also fire for child elements; count them so the highlight doesn't flicker.
+  const dragDepth = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const shownError = error ?? issue;
 
@@ -156,6 +173,32 @@ function PhotoTile({
     }
   }
 
+  const hasFiles = (e: DragEvent) => e.dataTransfer.types.includes('Files');
+  const drag = {
+    onDragEnter: (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      dragDepth.current += 1;
+      setDragging(true);
+    },
+    onDragOver: (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    },
+    onDragLeave: () => {
+      dragDepth.current = Math.max(0, dragDepth.current - 1);
+      if (dragDepth.current === 0) setDragging(false);
+    },
+    onDrop: (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      dragDepth.current = 0;
+      setDragging(false);
+      if (!busy) handleFile(e.dataTransfer.files[0]);
+    },
+  };
+
   return (
     <div className={spec.view === 'side' ? 'col-span-2 md:col-span-1' : ''}>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2">
@@ -165,8 +208,15 @@ function PhotoTile({
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
 
       <div
-        className={`relative ${spec.view === 'side' ? 'aspect-[4/3] md:aspect-[4/5]' : 'aspect-[4/5]'} overflow-hidden rounded-2xl border-2 ${
-          shownError ? 'border-red-400/70' : value ? 'border-gold-400/50' : 'border-dashed border-white/15'
+        {...drag}
+        className={`relative ${spec.view === 'side' ? 'aspect-[4/3] md:aspect-[4/5]' : 'aspect-[4/5]'} overflow-hidden rounded-2xl border-2 transition ${
+          dragging
+            ? 'border-gold-400 bg-gold-400/10'
+            : shownError
+              ? 'border-red-400/70'
+              : value
+                ? 'border-gold-400/50'
+                : 'border-dashed border-white/15'
         }`}
       >
         {value ? (
@@ -188,9 +238,24 @@ function PhotoTile({
             className="flex h-full w-full flex-col items-center justify-center gap-3 bg-white/[0.02] p-4 text-center text-violet-200 transition hover:bg-white/[0.06] hover:text-white"
           >
             {busy ? <Loader2 size={30} className="animate-spin" /> : <Camera size={30} className="text-gold-400" />}
-            <span className="text-sm font-bold">{busy ? 'Preparing…' : 'Take or upload photo'}</span>
+            <span className="text-sm font-bold">
+              {busy ? (
+                'Preparing…'
+              ) : (
+                <>
+                  <span className="[@media(pointer:fine)]:hidden">Take or upload photo</span>
+                  <span className="hidden [@media(pointer:fine)]:inline">Drag a photo here or click to choose</span>
+                </>
+              )}
+            </span>
             <span className="text-xs leading-snug text-violet-300/70">{hint}</span>
           </button>
+        )}
+        {dragging && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-night-950/80 text-center text-white backdrop-blur-sm">
+            <ImageDown size={32} className="text-gold-400" />
+            <span className="text-sm font-bold">Drop to {value ? 'replace' : 'add'} {title.toLowerCase()}</span>
+          </div>
         )}
         {shownError && (
           <div className="absolute inset-x-2 top-2 flex items-start gap-2 rounded-lg bg-red-950/90 p-2.5 text-xs font-semibold text-red-100">
