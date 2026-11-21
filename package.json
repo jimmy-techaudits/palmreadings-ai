@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "dev:full": "npm run build && wrangler dev",
+    "dev:full": "npm run build && wrangler dev --local --show-interactive-dev-session=false",
     "build": "tsc -b && astro build",
     "typecheck": "tsc -b",
-    "preview": "wrangler dev",
+    "preview": "wrangler dev --local --show-interactive-dev-session=false",
     "deploy": "npm run build && wrangler deploy",
     "compare": "tsx scripts/compare.ts"
   },

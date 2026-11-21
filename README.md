@@ -109,6 +109,10 @@ npx wrangler d1 migrations apply palmreadings --local   # once: local database
 npm run dev:full                 # builds and runs site + API on http://localhost:8787
 ```
 
+`dev:full` and `preview` always run fully locally (local D1, R2 and Worker) with wrangler's keyboard
+shortcuts turned off, so a stray key press can't switch to remote mode or open a Cloudflare tunnel.
+Stop the server with Ctrl+C.
+
 For hot reload: `npm run preview` (Worker on :8787) in one terminal, `npm run dev` (Astro on :4321,
 proxies /api) in another.
 
