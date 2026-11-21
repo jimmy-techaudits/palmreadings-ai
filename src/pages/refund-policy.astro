@@ -1,0 +1,31 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { CONTACT_EMAIL } from '../site';
+---
+
+<!-- Draft November 2026, split out of the Terms of Use. Have it reviewed by a legal advisor before relying on it. -->
+<Legal
+  title="Refund Policy | Palm Readings AI"
+  description="When purchases from Palm Readings AI can be refunded, and how to ask."
+  eyebrow="Refund Policy"
+  updated="November 21, 2026"
+>
+  <Fragment slot="heading">Our refund <em class="accent">policy</em></Fragment>
+
+  <h2 id="digital-readings">Digital Readings</h2>
+  <p>
+    Some readings or features may require payment. Prices are shown before you buy, and payments are processed by our
+    payment provider. Because readings are digital and delivered immediately, purchases are generally non-refundable.
+  </p>
+
+  <h2 id="when-we-will-make-it-right">When We Will Make It Right</h2>
+  <p>
+    If a reading fails to generate or you are charged in error, contact us and we will make it right.
+  </p>
+
+  <h2 id="contact-us">Contact Us</h2>
+  <p>
+    To ask about a payment or a refund, please contact us through our <a href="/contact/">contact form</a> or by email at
+    <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+  </p>
+</Legal>

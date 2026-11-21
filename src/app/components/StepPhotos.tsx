@@ -273,7 +273,7 @@ function PhotoTile({
             {busy ? (
               <Loader2 size={36} className="animate-spin text-gold-400" aria-hidden="true" />
             ) : (
-              <HandOutline mirrored={spec.hand === 'left'} />
+              <HandOutline mirrored={spec.hand === 'right'} />
             )}
             <span
               id={`${id}-action`}
@@ -308,7 +308,7 @@ function PhotoTile({
   );
 }
 
-/** Dashed hand-outline guide for an empty tile. The shape is a right hand; mirror it for the left. */
+/** Dashed hand-outline guide for an empty tile. The shape is a left palm seen from the front (thumb on the left); mirrored for the right palm, whose thumb shows on the right. */
 function HandOutline({ mirrored }: { mirrored: boolean }) {
   return (
     <svg

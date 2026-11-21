@@ -16,24 +16,24 @@ const heroLabels = [
   { text: 'Fate line · purpose', dot: 'bg-line-fate', border: 'border-line-fate/45', pos: 'sm:right-[2%] sm:bottom-[4%]' },
 ];
 
-const phases = [
+const steps = [
   {
-    phase: 'New moon · Phase one',
+    step: 'Step one',
     title: 'Choose your reading',
     text: 'Select the experience that matches your intention, from self-exploration to love, career, or your relationship.',
-    moon: 'new',
+    icon: 'choose',
   },
   {
-    phase: 'Half moon · Phase two',
+    step: 'Step two',
     title: 'Photograph your palms',
     text: 'Clear, well-lit photos of both hands capture your palm lines, structure, and subtle markers. We guide you through each shot.',
-    moon: 'half',
+    icon: 'camera',
   },
   {
-    phase: 'Full moon · Phase three',
+    step: 'Step three',
     title: 'Receive your reading',
     text: 'Your results arrive in moments, saved at a private link so you can come back to them anytime.',
-    moon: 'full',
+    icon: 'reading',
   },
 ];
 
@@ -49,6 +49,7 @@ const lines = [
 const readings = [
   {
     title: 'Full Life Reading',
+    type: 'full',
     tag: 'Both hands compared',
     text: 'See the full picture. Compare your inner blueprint with how you show up in the world across personality, love, career, and the turning points ahead.',
     emblem: 'emblem-gold',
@@ -56,6 +57,7 @@ const readings = [
   },
   {
     title: 'Love & Relationships',
+    type: 'love',
     tag: 'Heart line focus',
     text: 'Explore how you love, what you need, your relationship patterns, and your romantic timeline. Marriage and children insights are optional.',
     emblem: 'emblem-heart',
@@ -63,6 +65,7 @@ const readings = [
   },
   {
     title: 'Career & Purpose',
+    type: 'career',
     tag: 'Fate line focus',
     text: 'Understand your natural work style, drive, strengths, and the career shifts your hands point toward.',
     emblem: 'emblem-fate',
@@ -70,6 +73,7 @@ const readings = [
   },
   {
     title: 'Couples Compatibility',
+    type: 'couples',
     tag: 'Four hands read',
     text: 'Understand your dynamic. Read two people’s palms together to explore communication styles, emotional needs, and long-term potential.',
     emblem: 'emblem-life',
@@ -80,14 +84,17 @@ const readings = [
 const inside = [
   { num: 'I', text: 'Life at a glance: quick answers with a confidence level for each' },
   { num: 'II', text: 'An interactive map of the lines we found on each hand' },
-  { num: 'III', text: 'A life timeline and honest “other side” notes, not just flattery' },
+  { num: 'III', text: 'A timeline of the turning points your lines suggest, plus the challenges that come with your strengths' },
 ];
 
+// Mirrors the "Your life at a glance" cards on a real reading (the sample reading's answers).
 const glance = [
-  { label: 'Career', value: 'Creative leadership', vis: 'Clearly visible', clear: true },
-  { label: 'Money', value: 'Self-built wealth', vis: 'Clearly visible', clear: true },
-  { label: 'Turning point', value: 'Early 30s', vis: 'Clearly visible', clear: true },
-  { label: 'Life path', value: 'Self-directed', vis: 'Faint or partly visible', clear: false },
+  { label: 'Children', value: '1 child', note: 'Low confidence', vis: 'Faint or partly visible', clear: false, big: true, asked: true },
+  { label: 'Marriage', value: '1–2 marriages', note: 'Medium confidence', vis: 'Clearly visible', clear: true, big: true },
+  { label: 'Career', value: 'Creative leadership', note: 'Writer’s fork and a prominent Jupiter mount', vis: 'Clearly visible', clear: true },
+  { label: 'Money', value: 'Self-built wealth', note: 'Fate line rising from the life line', vis: 'Clearly visible', clear: true },
+  { label: 'Biggest turning point', value: 'Early 30s', note: 'Fate line becomes clear from mid-palm', vis: 'Clearly visible', clear: true },
+  { label: 'Life path', value: 'Self-directed', note: 'Faint fate line on the left hand, clear on the right', vis: 'Faint or partly visible', clear: false },
 ];
 
 const privacy = [
@@ -166,27 +173,43 @@ const privacy = [
       <div class:list={[container, 'py-[72px] md:py-28']}>
         <div class="mx-auto max-w-[640px] text-center">
           <p class="eyebrow">How it works</p>
-          <h2 class={h2}>Three phases, one reading</h2>
+          <h2 class={h2}>Your reading in three simple <em class="accent">steps</em></h2>
           <p class="mt-[18px] text-ink-subtle">From a few photos to a reading that shows exactly which features of your hands each insight comes from.</p>
         </div>
         <ol class="mt-12 grid gap-7 md:mt-[72px] [grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))]">
-          {phases.map((p) => (
+          {steps.map((p, i) => (
             <li
               class:list={[
                 'relative rounded-card-lg border bg-[var(--color-surface)] px-8 pb-9 pt-10',
-                p.moon === 'full' ? 'border-gold-400/30' : 'border-lavender-300/[0.14]',
+                i === steps.length - 1 ? 'border-gold-400/30' : 'border-lavender-300/[0.14]',
               ]}
             >
-              <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
-                {p.moon === 'full' ? (
-                  <circle cx="28" cy="28" r="20" fill="#F6C77F"></circle>
-                ) : (
-                  <circle cx="28" cy="28" r="20" fill="none" stroke="#F6C77F" stroke-width="1.5"></circle>
-                )}
-                {p.moon === 'half' && <path d="M28 8a20 20 0 0 1 0 40z" fill="#F6C77F"></path>}
-                <circle cx="28" cy="28" r="26" fill="none" stroke={p.moon === 'full' ? 'rgba(246,199,127,0.35)' : 'rgba(246,199,127,0.25)'} stroke-width="1"></circle>
-              </svg>
-              <p class="mt-[22px] font-accent text-xl italic text-lavender-300">{p.phase}</p>
+              <span aria-hidden="true" class="flex size-14 items-center justify-center rounded-full border border-gold-400/30 bg-[radial-gradient(circle,rgba(246,199,127,0.16),transparent_70%)] text-gold-400">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  {p.icon === 'choose' && (
+                    <Fragment>
+                      <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                      <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                      <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                      <path d="M14.5 17.5l2 2 4-4"></path>
+                    </Fragment>
+                  )}
+                  {p.icon === 'camera' && (
+                    <Fragment>
+                      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path>
+                      <circle cx="12" cy="13" r="3"></circle>
+                    </Fragment>
+                  )}
+                  {p.icon === 'reading' && (
+                    <Fragment>
+                      <path d="M4 19.5V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14.5"></path>
+                      <path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20"></path>
+                      <path d="M12 7l.9 2.6L15.5 10l-2.6.9L12 13.5l-.9-2.6L8.5 10l2.6-.4z"></path>
+                    </Fragment>
+                  )}
+                </svg>
+              </span>
+              <p class="mt-[22px] text-xs font-medium uppercase tracking-[0.16em] text-lavender-300">{p.step}</p>
               <h3 class="mt-1.5 font-display text-2xl font-medium text-white">{p.title}</h3>
               <p class="mt-3 text-ink-muted">{p.text}</p>
             </li>
@@ -200,7 +223,7 @@ const privacy = [
       <div class:list={[container, 'flex flex-wrap items-center gap-16 py-[72px] md:py-28']}>
         <div class="flex min-w-0 flex-[1_1_380px] justify-center">
           <div class="diagram-card relative w-full max-w-[420px] rounded-[32px] border border-lavender-300/[0.16] p-6 sm:p-8">
-            <svg viewBox="0 0 300 400" role="img" aria-label="Diagram of a palm showing the heart, head, life, fate and sun lines" class="block h-auto w-full">
+            <svg viewBox="0 0 300 400" role="img" aria-label="Diagram of a palm showing the heart, head, life, fate, sun and Mercury lines" class="block h-auto w-full">
               <g fill="#221A4E">
                 <rect x="66" y="64" width="38" height="140" rx="19"></rect>
                 <rect x="110" y="30" width="40" height="170" rx="20"></rect>
@@ -214,6 +237,7 @@ const privacy = [
               <path d="M84 236C122 262 118 322 132 370" fill="none" stroke="var(--color-line-life)" stroke-width="4" stroke-linecap="round"></path>
               <path d="M162 370C160 322 158 272 150 214" fill="none" stroke="var(--color-line-fate)" stroke-width="4" stroke-linecap="round"></path>
               <path d="M198 334C198 302 196 272 192 232" fill="none" stroke="var(--color-line-sun)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 8"></path>
+              <path d="M136 352C168 318 198 272 218 230" fill="none" stroke="var(--color-line-mercury)" stroke-width="3" stroke-linecap="round"></path>
             </svg>
           </div>
         </div>
@@ -249,7 +273,7 @@ const privacy = [
         </div>
         <div class="mt-12 grid gap-6 md:mt-16 [grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr))]">
           {readings.map((r) => (
-            <a href={START} class="reading-card flex flex-col gap-5 rounded-card-lg border border-lavender-300/[0.16] bg-[rgba(22,16,50,0.55)] p-6 no-underline sm:p-9">
+            <a href={`/reading/?new=1&type=${r.type}`} class="reading-card flex flex-col gap-5 rounded-card-lg border border-lavender-300/[0.16] bg-[rgba(22,16,50,0.55)] p-6 no-underline sm:p-9">
               <div class="flex items-center justify-between gap-4">
                 <span aria-hidden="true" class:list={['emblem flex size-16 flex-none items-center justify-center rounded-full border text-gold-400', r.emblem]}>
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -315,10 +339,19 @@ const privacy = [
           </div>
           <div class="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
             {glance.map((g) => (
-              <div class="rounded-card-sm border border-lavender-300/[0.12] bg-[rgba(6,6,15,0.55)] p-3.5 sm:p-[18px]">
-                <p class="text-xs uppercase tracking-[0.06em] text-ink-subtle sm:tracking-[0.1em]">{g.label}</p>
-                <p class="mt-1.5 font-display text-[17px] leading-[1.25] text-white sm:text-[19px]">{g.value}</p>
-                <p class:list={['mt-2.5 flex items-baseline gap-2 text-xs', g.clear ? 'text-vis-clear' : 'text-vis-faint']}>
+              <div
+                class:list={[
+                  'flex flex-col gap-1 rounded-[20px] border bg-[linear-gradient(180deg,rgba(30,20,66,0.7),rgba(14,10,34,0.7))] p-3.5 sm:p-[18px]',
+                  g.asked ? 'border-gold-400/70 shadow-[0_0_0_1px_rgba(246,199,127,0.25),0_10px_34px_rgba(246,199,127,0.12)]' : 'border-lavender-300/[0.16]',
+                ]}
+              >
+                <p class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                  <span class="text-xs uppercase tracking-[0.08em] text-gold-400 sm:tracking-[0.12em]">{g.label}</span>
+                  {g.asked && <span class="whitespace-nowrap rounded-full bg-gold-400 px-2 py-0.5 text-xs font-medium text-plum-900">You asked</span>}
+                </p>
+                <p class:list={['font-display leading-[1.15] text-white', g.big ? 'text-[20px] sm:text-[24px]' : 'text-[17px] sm:text-[19px]']}>{g.value}</p>
+                <p class="text-sm text-ink-muted">{g.note}</p>
+                <p class:list={['mt-auto flex items-baseline gap-2 pt-1.5 text-xs', g.clear ? 'text-vis-clear' : 'text-vis-faint']}>
                   <span aria-hidden="true" class="inline-block size-2 flex-none translate-y-[-1px] rounded-full bg-current"></span>
                   {g.vis}
                 </p>

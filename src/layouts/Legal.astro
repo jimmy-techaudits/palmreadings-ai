@@ -48,16 +48,44 @@ if (toc.length !== headingCount) {
 
   <section>
     <div
-      class="mx-auto grid max-w-[1200px] items-start gap-y-10 px-4 pb-20 pt-12 sm:px-8 sm:pb-28 sm:pt-[72px] lg:grid-cols-[minmax(240px,1fr)_minmax(0,760px)] lg:gap-x-16"
+      class="mx-auto grid max-w-[1200px] items-start gap-y-10 px-4 pb-20 pt-0 sm:px-8 sm:pb-28 lg:grid-cols-[minmax(240px,1fr)_minmax(0,760px)] lg:gap-x-16 lg:pt-[72px]"
     >
-      <nav aria-labelledby="legal-toc-title" class="min-w-0 rounded-card border border-lavender-300/[0.14] bg-[rgba(20,16,44,0.5)] px-3 py-6">
-        <p id="legal-toc-title" class="mx-3.5 mb-2.5 font-display text-sm tracking-[0.12em] text-gold-400">On this page</p>
-        <ul class="gap-x-2 sm:columns-2 lg:columns-1">
+      <!-- Phones and tablets: a slim bar that stays at the top, shows the current section and opens the full list. -->
+      <details data-toc-mobile class="group sticky top-0 z-20 -mx-4 border-b border-lavender-300/[0.14] bg-[rgba(10,8,24,0.94)] px-4 backdrop-blur-md sm:-mx-8 sm:px-8 lg:hidden">
+        <summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <span class="min-w-0">
+            <span class="block text-xs uppercase tracking-[0.14em] text-gold-400">On this page</span>
+            <span data-toc-current class="block truncate text-base text-white">{toc[0]?.label}</span>
+          </span>
+          <svg class="shrink-0 text-gold-400 transition group-open:rotate-180" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </summary>
+        <ul class="max-h-[60vh] overflow-y-auto pb-3">
           {toc.map((item) => (
-            <li class="break-inside-avoid">
+            <li>
               <a
                 href={`#${item.id}`}
-                class="flex min-h-11 items-center rounded-xl px-3.5 py-2 text-sm leading-snug text-[#c8bee8] no-underline transition-colors hover:bg-lavender-300/[0.08] hover:text-white"
+                data-toc-link
+                class="flex min-h-11 items-center rounded-xl px-3.5 py-2 text-sm leading-snug text-[#c8bee8] no-underline transition-colors hover:bg-lavender-300/[0.08] hover:text-white aria-[current=location]:bg-gold-400/10 aria-[current=location]:text-white aria-[current=location]:shadow-[inset_2px_0_0_#f6c77f]"
+                set:html={item.label}
+              />
+            </li>
+          ))}
+        </ul>
+      </details>
+
+      <!-- Desktop: the list stays in view while the policy scrolls, and highlights the section you're reading. -->
+      <nav
+        aria-labelledby="legal-toc-title"
+        class="hidden min-w-0 rounded-card border border-lavender-300/[0.14] bg-[rgba(20,16,44,0.5)] px-3 py-6 lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto"
+      >
+        <p id="legal-toc-title" class="mx-3.5 mb-2.5 font-display text-sm tracking-[0.12em] text-gold-400">On this page</p>
+        <ul>
+          {toc.map((item) => (
+            <li>
+              <a
+                href={`#${item.id}`}
+                data-toc-link
+                class="flex min-h-11 items-center rounded-xl px-3.5 py-2 text-sm leading-snug text-[#c8bee8] no-underline transition-colors hover:bg-lavender-300/[0.08] hover:text-white aria-[current=location]:bg-gold-400/10 aria-[current=location]:text-white aria-[current=location]:shadow-[inset_2px_0_0_#f6c77f]"
                 set:html={item.label}
               />
             </li>
@@ -68,6 +96,49 @@ if (toc.length !== headingCount) {
     </div>
   </section>
 </Base>
+
+<script>
+  // Highlight the section being read in the "On this page" lists, and show its name in the phone bar.
+  const headings = [...document.querySelectorAll<HTMLElement>('.legal-prose h2[id]')];
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')];
+  const current = document.querySelector<HTMLElement>('[data-toc-current]');
+  const mobile = document.querySelector<HTMLDetailsElement>('[data-toc-mobile]');
+  let shown = '';
+
+  function update() {
+    // The current section is the last heading that has scrolled past the top band of the screen.
+    const line = window.innerHeight * 0.25;
+    let active = headings[0];
+    for (const h of headings) if (h.getBoundingClientRect().top <= line) active = h;
+    if (!active || active.id === shown) return;
+    shown = active.id;
+    for (const a of links) {
+      if (a.getAttribute('href') === `#${shown}`) {
+        a.setAttribute('aria-current', 'location');
+        // Keep the highlighted link visible inside the desktop list.
+        if (a.closest('nav')) a.scrollIntoView({ block: 'nearest' });
+      } else a.removeAttribute('aria-current');
+    }
+    if (current) current.textContent = active.textContent?.trim() ?? '';
+  }
+
+  let queued = false;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        update();
+      });
+    },
+    { passive: true },
+  );
+  update();
+  // Close the phone list after a jump.
+  for (const a of links) a.addEventListener('click', () => mobile?.removeAttribute('open'));
+</script>
 
 <style is:global>
   .legal-prose {
@@ -84,7 +155,12 @@ if (toc.length !== headingCount) {
     font-size: 24px;
     line-height: 1.25;
     color: #fff;
-    scroll-margin-top: 24px;
+    scroll-margin-top: 88px;
+  }
+  @media (min-width: 1024px) {
+    .legal-prose h2 {
+      scroll-margin-top: 24px;
+    }
   }
   .legal-prose > h2:first-child {
     margin-top: 0;

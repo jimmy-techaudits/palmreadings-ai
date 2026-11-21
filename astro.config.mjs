@@ -8,6 +8,8 @@ export default defineConfig({
   site: 'https://palmreadings.ai',
   output: 'static',
   trailingSlash: 'always',
+  // Keep the whitespace between text and inline tags; compression was eating the space before links.
+  compressHTML: false,
   build: { format: 'directory' },
   integrations: [react()],
   vite: {

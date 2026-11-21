@@ -20,7 +20,7 @@ const emptyPerson = (): PersonDraft => ({ name: '', age: '', pronouns: '' });
 /** "Start a Reading" links use ?new=1 to begin fresh instead of reopening the last reading. */
 function initialSaved(): SavedReading | null {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('new')) {
+  if (params.has('new') || params.has('type')) {
     clearReading();
     window.history.replaceState(null, '', window.location.pathname);
     return null;
@@ -28,12 +28,27 @@ function initialSaved(): SavedReading | null {
   return loadReading();
 }
 
+/** Reading types that can be picked from a link, e.g. the home page cards: /reading/?new=1&type=love. */
+const READING_TYPES: Record<string, [Mode, Focus]> = {
+  full: ['solo', 'overall'],
+  love: ['solo', 'love'],
+  career: ['solo', 'career'],
+  couples: ['couple', 'overall'],
+};
+
+/** A reading type chosen in the link skips step 1. Read before initialSaved() clears the query string. */
+function initialType(): [Mode, Focus] | null {
+  const type = new URLSearchParams(window.location.search).get('type');
+  return (type && READING_TYPES[type]) || null;
+}
+
 export default function App() {
+  const [preset] = useState(initialType);
   const [saved, setSaved] = useState<SavedReading | null>(initialSaved);
-  const [step, setStep] = useState<Step>(() => (saved ? 'result' : 'choose'));
-  const [mode, setMode] = useState<Mode>('solo');
-  const [focus, setFocus] = useState<Focus>('overall');
-  const [people, setPeople] = useState<PersonDraft[]>([emptyPerson()]);
+  const [step, setStep] = useState<Step>(() => (saved ? 'result' : preset ? 'details' : 'choose'));
+  const [mode, setMode] = useState<Mode>(preset?.[0] ?? 'solo');
+  const [focus, setFocus] = useState<Focus>(preset?.[1] ?? 'overall');
+  const [people, setPeople] = useState<PersonDraft[]>(() => (preset?.[0] === 'couple' ? [emptyPerson(), emptyPerson()] : [emptyPerson()]));
   const [includeFamily, setIncludeFamily] = useState(true);
   const [curious, setCurious] = useState<Curious | null>(null);
   const [photos, setPhotos] = useState<Partial<Record<SlotId, string>>>({});

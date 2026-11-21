@@ -14,8 +14,9 @@ Design: "celestial modern" redesign (Nov 2026). Tokens (colors, palm line colors
 `src/styles/global.css`; shared classes `.btn-gold`, `.btn-ghost`, `.panel`, `.panel-raised`, `.starfield`,
 `.hero-glow`, `.accent` (italic gold Cormorant word in a heading) and `.eyebrow`. Fonts: Cinzel (headings),
 Cormorant Garamond italic (accents), Outfit (everything else). Rules: nothing smaller than 14px (`text-xs` is
-14px), no em dashes in copy, the same color for each palm line everywhere. Legal pages share
-`src/layouts/Legal.astro`; everything else uses `src/layouts/Base.astro` (header and footer).
+14px), no em dashes in copy, the same color for each palm line everywhere. Legal pages (Privacy Policy, Terms of Use,
+Refund Policy) share `src/layouts/Legal.astro`, whose "On this page" list stays in view and highlights the current
+section; everything else uses `src/layouts/Base.astro` (header and footer).
 
 ## How a reading works
 
