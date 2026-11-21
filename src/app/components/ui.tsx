@@ -18,29 +18,48 @@ export function Button({
   return <button {...props} className={`inline-flex items-center justify-center gap-2 ${VARIANTS[variant]} ${className}`} />;
 }
 
-export function StepHeader({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: ReactNode }) {
+export function StepHeader({ eyebrow, title, subtitle }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode }) {
   return (
-    <div className="mb-8 text-center">
-      {eyebrow && <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-400">{eyebrow}</p>}
-      <h1 className="font-display text-3xl text-white sm:text-4xl">{title}</h1>
-      {subtitle && <p className="mx-auto mt-3 max-w-xl text-violet-200/80">{subtitle}</p>}
+    <div className="mt-10 text-center sm:mt-14">
+      {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+      <h1 className="mt-3.5 font-display text-[clamp(34px,4vw,52px)] font-medium leading-[1.12] text-white">{title}</h1>
+      {subtitle && <p className="mx-auto mt-4 max-w-[600px] text-lg text-ink-muted">{subtitle}</p>}
     </div>
   );
 }
 
 const STEPS = ['Choose', 'About you', 'Photos', 'Reading'];
 
+/** Four-node "constellation" progress: done nodes are faded gold, the current one glows, upcoming ones are outlined. */
 export function Stepper({ current }: { current: number }) {
   return (
-    <ol className="mx-auto mb-10 flex max-w-md items-center justify-between gap-2" aria-label="Progress">
+    <ol className="mx-auto grid max-w-[560px] grid-cols-4" aria-label="Progress">
       {STEPS.map((label, i) => {
         const state = i < current ? 'done' : i === current ? 'current' : 'todo';
         return (
-          <li key={label} className="flex flex-1 flex-col items-center gap-1.5" aria-current={state === 'current' ? 'step' : undefined}>
+          <li key={label} className="relative flex flex-col items-center gap-2.5" aria-current={state === 'current' ? 'step' : undefined}>
+            {i > 0 && (
+              <span
+                aria-hidden="true"
+                className={`absolute right-1/2 top-[9px] h-px w-full ${
+                  i <= current ? 'bg-[linear-gradient(90deg,#f6c77f,rgba(246,199,127,0.5))]' : 'bg-lavender-300/20'
+                }`}
+              />
+            )}
             <span
-              className={`h-1.5 w-full rounded-full ${state === 'todo' ? 'bg-white/10' : 'bg-gold-400'} ${state === 'current' ? 'opacity-100' : state === 'done' ? 'opacity-60' : ''}`}
+              aria-hidden="true"
+              className={`relative z-[1] size-[18px] rounded-full ${
+                state === 'current'
+                  ? 'bg-gold-400 shadow-[0_0_0_6px_rgba(246,199,127,0.15),0_0_20px_#f6c77f]'
+                  : state === 'done'
+                    ? 'bg-[#967a52]' /* gold at 60% over the page, opaque so the line doesn't show through */
+                    : 'border border-lavender-300/35 bg-[#0e0b22]'
+              }`}
             />
-            <span className={`text-xs ${state === 'current' ? 'font-bold text-white' : 'text-violet-300/60'}`}>{label}</span>
+            <span className={`text-center text-sm ${state === 'current' ? 'font-medium text-white' : 'text-ink-subtle'}`}>
+              {label}
+              {state === 'done' && <span className="sr-only"> (done)</span>}
+            </span>
           </li>
         );
       })}

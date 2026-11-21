@@ -161,78 +161,97 @@ export default function App() {
 
   const stepIndex = { choose: 0, details: 1, photos: 2, reading: 3, error: 3, result: 3 }[step];
 
+  if (step === 'result' && saved) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6">
+        <Results saved={saved} onReset={reset} />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6">
-      {step !== 'result' && <Stepper current={stepIndex} />}
+    <div className="starfield relative overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_40%_at_50%_8%,rgba(110,52,200,0.32),transparent_70%)]" />
+      <div className="relative mx-auto w-full max-w-[1100px] px-4 pb-20 pt-8 sm:px-8 sm:pb-[120px] sm:pt-12">
+        <Stepper current={stepIndex} />
 
-      {step === 'choose' && <StepChoose onChoose={choose} />}
+        {step === 'choose' && <StepChoose onChoose={choose} />}
 
-      {step === 'details' && (
-        <StepDetails
-          mode={mode}
-          people={people}
-          includeFamily={includeFamily}
-          curious={curious}
-          onCuriousChange={setCurious}
-          onChange={setPeople}
-          onFamilyChange={setIncludeFamily}
-          onBack={() => setStep('choose')}
-          onNext={() => setStep('photos')}
-        />
-      )}
-
-      {step === 'photos' && (
-        <>
-          {Object.keys(issues).length > 0 && (
-            <div role="alert" className="mx-auto mb-6 flex max-w-xl items-start gap-3 rounded-xl border border-red-400/40 bg-red-950/40 p-4 text-sm text-red-100">
-              <AlertCircle size={20} className="shrink-0" />
-              Some photos couldn’t be read clearly. Please replace the flagged ones and try again.
-            </div>
-          )}
-          <StepPhotos
+        {step === 'details' && (
+          <StepDetails
             mode={mode}
             people={people}
-            slots={slots}
-            photos={photos}
-            issues={issues}
-            consent={consent}
-            marketingConsent={marketingConsent}
-            onMarketingConsent={setMarketingConsent}
-            botCheck={<Turnstile key={botKey} onToken={setBotToken} />}
-            botReady={!turnstileEnabled || !!botToken}
-            onPhoto={(slot, v) => {
-              setPhotos((prev) => {
-                const next = { ...prev };
-                if (v) next[slot] = v;
-                else delete next[slot];
-                return next;
-              });
-              setIssues((prev) => {
-                const next = { ...prev };
-                delete next[slot];
-                return next;
-              });
-            }}
-            onConsent={setConsent}
-            onBack={() => setStep('details')}
-            onSubmit={submit}
+            includeFamily={includeFamily}
+            curious={curious}
+            onCuriousChange={setCurious}
+            onChange={setPeople}
+            onFamilyChange={setIncludeFamily}
+            onBack={() => setStep('choose')}
+            onNext={() => setStep('photos')}
           />
-        </>
-      )}
+        )}
 
-      {step === 'reading' && <Progress stage={stage} observations={observations} />}
+        {step === 'photos' && (
+          <>
+            {Object.keys(issues).length > 0 && (
+              <div
+                role="alert"
+                className="mx-auto mt-10 flex max-w-xl items-start gap-3 rounded-card-sm border border-red-400/40 bg-red-950/40 px-5 py-4 text-base text-red-100"
+              >
+                <AlertCircle size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
+                Some photos couldn’t be read clearly. Please replace the flagged ones and try again.
+              </div>
+            )}
+            <StepPhotos
+              mode={mode}
+              people={people}
+              slots={slots}
+              photos={photos}
+              issues={issues}
+              consent={consent}
+              marketingConsent={marketingConsent}
+              onMarketingConsent={setMarketingConsent}
+              botCheck={<Turnstile key={botKey} onToken={setBotToken} />}
+              botReady={!turnstileEnabled || !!botToken}
+              onPhoto={(slot, v) => {
+                setPhotos((prev) => {
+                  const next = { ...prev };
+                  if (v) next[slot] = v;
+                  else delete next[slot];
+                  return next;
+                });
+                setIssues((prev) => {
+                  const next = { ...prev };
+                  delete next[slot];
+                  return next;
+                });
+              }}
+              onConsent={setConsent}
+              onBack={() => setStep('details')}
+              onSubmit={submit}
+            />
+          </>
+        )}
 
-      {step === 'error' && (
-        <section role="alert" className="mx-auto flex max-w-md flex-col items-center py-16 text-center">
-          <AlertCircle size={40} className="mb-4 text-red-300" />
-          <h1 className="font-display text-2xl text-white">The reading was interrupted</h1>
-          <p className="mt-3 text-violet-200/80">{error}</p>
-          <p className="mt-1 text-sm text-violet-300/60">Your photos and details are still here.</p>
-          <Button className="mt-6" onClick={() => setStep('photos')}>Back to photos</Button>
-        </section>
-      )}
+        {step === 'reading' && <Progress stage={stage} observations={observations} />}
 
-      {step === 'result' && saved && <Results saved={saved} onReset={reset} />}
+        {step === 'error' && (
+          <section role="alert" className="mx-auto mt-10 flex max-w-[600px] flex-col items-center rounded-card-lg border border-lavender-300/16 bg-[rgba(20,16,44,0.6)] px-6 py-10 text-center sm:mt-14 sm:px-10 sm:py-12">
+            <span
+              aria-hidden="true"
+              className="flex size-16 items-center justify-center rounded-full border border-line-heart/45 bg-[radial-gradient(circle,rgba(242,139,168,0.18),transparent_70%)] text-line-heart"
+            >
+              <AlertCircle size={28} strokeWidth={1.6} />
+            </span>
+            <h1 className="mt-6 font-display text-[clamp(28px,3.4vw,40px)] font-medium leading-[1.15] text-white">
+              The reading was <em className="accent">interrupted</em>
+            </h1>
+            <p className="mt-4 text-lg text-ink-muted">{error}</p>
+            <p className="mt-2 text-base text-ink-subtle">Your photos and details are still here.</p>
+            <Button className="mt-8" onClick={() => setStep('photos')}>Back to photos</Button>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
