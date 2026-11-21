@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { IMAGES } from '../site';
+import { readingServiceNode } from '../seo';
 
 const START = '/reading/?new=1';
 
@@ -106,8 +107,9 @@ const privacy = [
 ---
 
 <Base
-  title="Palm Readings | AI-Powered Custom Palmistry Readings"
-  description="Turn photos of your hands into a deeply personal palm reading about your personality, relationships, and life direction, rooted in traditional palmistry."
+  title="AI Palm Reading Online From Photos | Palm Readings AI"
+  description="Get an AI palm reading online from photos of both hands. Rooted in traditional palmistry, it reads your heart, head, life and fate lines. Start free."
+  schema={[readingServiceNode()]}
 >
   <div class="text-[17px] leading-[1.6]">
     <!-- 1. Hero -->

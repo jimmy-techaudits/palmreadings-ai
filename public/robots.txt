@@ -1,0 +1,8 @@
+# palmreadings.ai
+# Private reading links (/r/...) are left crawlable on purpose: they send "noindex", which search
+# engines can only see if they're allowed to fetch the page. The API is never useful to crawlers.
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://palmreadings.ai/sitemap.xml

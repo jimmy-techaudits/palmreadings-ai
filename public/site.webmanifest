@@ -1,0 +1,13 @@
+{
+  "name": "Palm Readings AI",
+  "short_name": "Palm Readings",
+  "description": "AI palm reading from photos of your hands, rooted in traditional palmistry.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06060f",
+  "theme_color": "#06060f",
+  "icons": [
+    { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/images/palm-readings-ai-icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

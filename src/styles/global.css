@@ -1,5 +1,17 @@
 @import 'tailwindcss';
 
+/* Self-hosted fonts (latin subset only): faster, and visitors' IP addresses aren't sent to Google. */
+@import '@fontsource/cinzel/latin-400.css';
+@import '@fontsource/cinzel/latin-500.css';
+@import '@fontsource/cinzel/latin-600.css';
+@import '@fontsource/cormorant-garamond/latin-400-italic.css';
+@import '@fontsource/cormorant-garamond/latin-500-italic.css';
+@import '@fontsource/cormorant-garamond/latin-600-italic.css';
+@import '@fontsource/outfit/latin-300.css';
+@import '@fontsource/outfit/latin-400.css';
+@import '@fontsource/outfit/latin-500.css';
+@import '@fontsource/outfit/latin-600.css';
+
 /*
  * "Celestial modern" design system (redesign handoff, Nov 2026).
  * Token values come from the handoff's tokens.css; names keep the existing Tailwind theme names

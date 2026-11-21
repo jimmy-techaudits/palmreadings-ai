@@ -5,10 +5,8 @@ const LOCAL = '/images';
 
 export const IMAGES = {
   logo: `${LOCAL}/palm-readings-ai-logo.png`,
-  bothHands: `${LOCAL}/both-hands.png`,
-  couples: `${LOCAL}/couples.png`,
-  loveFuture: `${LOCAL}/love-and-future.png`,
-  careerPath: `${LOCAL}/career-path.png`,
+  /** 420 x 180 copy of the logo for the header and footer (shown at most 210px wide). */
+  logoSmall: `${LOCAL}/palm-readings-ai-logo-420.png`,
   icon: `${LOCAL}/palm-readings-ai-icon.png`,
   favicon: `${LOCAL}/favicon-32.png`,
   appleTouchIcon: `${LOCAL}/apple-touch-icon.png`,

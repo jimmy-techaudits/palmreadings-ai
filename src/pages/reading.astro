@@ -1,14 +1,32 @@
 ---
 import Base from '../layouts/Base.astro';
 import App from '../app/App';
+import { readingServiceNode } from '../seo';
 ---
 
 <Base
-  title="Start Your Palm Reading | Palm Readings AI"
-  description="Photograph your palms and get a personal reading on your personality, love life, career, or relationship."
+  title="Read My Palm: Start Your AI Palm Reading | Palm Readings AI"
+  description="Photograph both palms and get a personal AI palm reading on love, marriage, career, money and your life timeline, saved at a private link."
+  breadcrumb="Start a reading"
+  schema={[readingServiceNode()]}
   hideCta
 >
   <App client:only="react">
-    <div slot="fallback" class="flex min-h-[60vh] items-center justify-center text-violet-200">Loading…</div>
+    <!-- Shown until the app loads (and to crawlers that don't run JavaScript): matches step 1's heading. -->
+    <div slot="fallback" class="mx-auto min-h-[60vh] max-w-[1100px] px-4 pb-24 pt-[104px] text-center sm:px-8 sm:pt-[120px]">
+      <p class="eyebrow">Step 1 of 3</p>
+      <h1 class="mt-3.5 font-display text-[clamp(34px,4vw,52px)] font-medium leading-[1.12] text-white">
+        What would you like to <em class="accent">explore?</em>
+      </h1>
+      <p class="mx-auto mt-4 max-w-[600px] text-lg text-ink-muted">
+        Every reading looks at both of your hands. Pick the area you most want guidance on.
+      </p>
+      <noscript>
+        <p class="mx-auto mt-10 max-w-[600px] text-ink-soft">
+          Your palm reading runs in your browser, so please turn on JavaScript to choose a reading, add photos of your palms and see
+          your results.
+        </p>
+      </noscript>
+    </div>
   </App>
 </Base>

@@ -55,9 +55,33 @@ export default {
       return res;
     }
 
+    // Old WordPress sitemaps (Yoast, Rank Math, core) point search engines to the new one.
+    if (/^\/(sitemap_index|sitemap-index|[a-z-]+-sitemap\d*|wp-sitemap[a-z0-9-]*)\.xml$/.test(path)) {
+      return Response.redirect(`${url.origin}/sitemap.xml`, 301);
+    }
+
     // Old WordPress URLs with no equivalent.
-    if (path.startsWith('/uncategorized/') || path.startsWith('/wp-')) {
+    if (
+      /^\/(uncategorized|category|tag|author|feed|comments)(\/|$)/.test(path) ||
+      path.startsWith('/wp-') ||
+      path === '/index.php' ||
+      (path === '/' && url.searchParams.has('p'))
+    ) {
       return Response.redirect(`${url.origin}/`, 301);
+    }
+
+    // Pages live at addresses ending in "/": redirect permanently (the asset server would use a temporary 307).
+    if (!path.endsWith('/') && !path.split('/').pop()!.includes('.')) {
+      return Response.redirect(`${url.origin}${path}/${url.search}`, 301);
+    }
+
+    // Staging and preview hosts (e.g. *.workers.dev) must never be indexed: only palmreadings.ai is.
+    if (url.hostname !== 'palmreadings.ai') {
+      if (path === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
+      const res = await env.ASSETS.fetch(request);
+      const out = new Response(res.body, res);
+      out.headers.set('x-robots-tag', 'noindex, nofollow');
+      return out;
     }
 
     return env.ASSETS.fetch(request);

@@ -1,17 +1,28 @@
 ---
 import '../styles/global.css';
 import { CONTACT_EMAIL, GA_ID, IMAGES } from '../site';
+import { pageGraph, SHARE_IMAGE, SITE_NAME, type PageType } from '../seo';
 
 interface Props {
+  /** Under 60 characters, ending in "| Palm Readings AI". */
   title: string;
+  /** About 140 to 160 characters. */
   description: string;
   /** Hide the "Start a Reading" button (on the reading page itself). */
   hideCta?: boolean;
-  /** Keep the page out of search engines (private reading links). */
+  /** Keep the page out of search engines (private reading links, 404). */
   noindex?: boolean;
+  /** schema.org page type for the structured data. */
+  pageType?: PageType;
+  /** This page's name in the breadcrumb trail (Home > name). Omit on the home page. */
+  breadcrumb?: string;
+  /** Extra schema.org nodes for this page, e.g. the reading service. */
+  schema?: Record<string, unknown>[];
 }
-const { title, description, hideCta = false, noindex = false } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const { title, description, hideCta = false, noindex = false, pageType, breadcrumb, schema } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+const shareImage = new URL(SHARE_IMAGE, Astro.site).toString();
+const jsonLd = noindex ? null : pageGraph({ path: Astro.url.pathname, title, description, type: pageType, breadcrumb, extra: schema });
 const nav = [
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
@@ -22,28 +33,42 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en-US">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    {noindex ? <meta name="robots" content="noindex, nofollow" /> : <link rel="canonical" href={canonical} />}
+    {
+      noindex ? (
+        <meta name="robots" content="noindex, nofollow" />
+      ) : (
+        <>
+          <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+          <link rel="canonical" href={canonical} />
+        </>
+      )
+    }
     {noindex && <meta name="referrer" content="no-referrer" />}
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL(IMAGES.logo, Astro.site).toString()} />
+    {!noindex && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Palm Readings AI: AI palm reading from photos of your hands" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareImage} />
     <meta name="theme-color" content="#06060f" />
     <link rel="icon" type="image/png" sizes="32x32" href={IMAGES.favicon} />
     <link rel="apple-touch-icon" href={IMAGES.appleTouchIcon} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="manifest" href="/site.webmanifest" />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
     <script is:inline define:vars={{ GA_ID }}>
       window.dataLayer = window.dataLayer || [];
@@ -57,7 +82,7 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
     <header class="relative z-30 border-b border-white/[0.08] bg-[linear-gradient(180deg,rgba(28,14,58,0.92),rgba(10,8,24,0.88))] print:hidden">
       <div class="mx-auto flex max-w-[1200px] items-center justify-between gap-x-3 gap-y-4 px-4 py-3.5 max-[359px]:px-3 sm:gap-x-6 sm:px-8">
         <a href="/" aria-label="Palm Readings AI home" class="flex shrink-0 items-center rounded-lg">
-          <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" class="block h-12 w-auto max-[359px]:h-10 sm:h-16" />
+          <img src={IMAGES.logoSmall} alt="Palm Readings AI" width="420" height="180" fetchpriority="high" class="block h-12 w-auto max-[359px]:h-10 sm:h-16" />
         </a>
         <nav class="flex items-center gap-1.5" aria-label="Main">
           {nav.map((n) => (
@@ -103,7 +128,7 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
         <div class="grid gap-10 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
           <div>
             <a href="/" aria-label="Palm Readings AI home" class="inline-block rounded-lg">
-              <img src={IMAGES.logo} alt="Palm Readings AI" width="700" height="300" loading="lazy" class="block h-auto w-[210px]" />
+              <img src={IMAGES.logoSmall} alt="Palm Readings AI" width="420" height="180" loading="lazy" class="block h-auto w-[210px]" />
             </a>
           </div>
           <div>
