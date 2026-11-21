@@ -188,6 +188,8 @@ export interface Reading {
   closing: { kind: 'mantra' | 'reflection'; text: string };
   /** Copied from the request so the page can show that topic first. */
   curious?: Curious;
+  /** True when made by the mock provider: canned text, the photos were not looked at. */
+  sample?: boolean;
 }
 
 // ---------- Streaming protocol (newline-delimited JSON) ----------

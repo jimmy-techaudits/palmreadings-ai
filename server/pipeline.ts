@@ -77,6 +77,7 @@ export async function runReading(
   reading.hand_notes = reading.hand_notes?.filter((n) => observations[n.person]?.hands.some((h) => h.hand === n.hand));
   reading.career_paths = reading.career_paths?.slice(0, 5);
   if (req.mode === 'solo' && req.curious) reading.curious = req.curious;
+  if (provider.name === 'mock') reading.sample = true;
 
   let id: string | null = null;
   try {

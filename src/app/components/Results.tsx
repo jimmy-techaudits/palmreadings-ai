@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import {
-  Baby, Brain, Briefcase, ChevronDown, Compass, Flame, Gem, Heart, HeartHandshake, MessageCircle, Milestone, Printer,
+  Baby, Brain, Briefcase, ChevronDown, Compass, Flame, FlaskConical, Gem, Heart, HeartHandshake, MessageCircle, Milestone, Printer,
   RotateCcw, Sparkles, Sprout, Target, TrendingUp, Users, Wallet, type LucideIcon,
 } from 'lucide-react';
 import type { Curious, FamilyPrediction, GlanceItem, Hand, HandObservation, LineKey, Reading, ReadingSection, Seen } from '../../../shared/types';
@@ -86,6 +86,19 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
 
   return (
     <article className="mx-auto max-w-3xl lg:max-w-none">
+      {reading.sample && (
+        <div role="note" className="mx-auto mb-8 flex max-w-3xl items-start gap-3 rounded-2xl border-2 border-amber-400/70 bg-amber-950/60 p-4 text-amber-50">
+          <FlaskConical size={22} className="mt-0.5 shrink-0 text-amber-300" />
+          <div className="text-sm leading-relaxed">
+            <p className="font-bold text-white">Sample reading: your photos were not analyzed</p>
+            <p>
+              The site is running in test mode (<code className="rounded bg-black/30 px-1">AI_PROVIDER=mock</code>), so every reading shows the same
+              sample text, whatever photos are uploaded. Set <code className="rounded bg-black/30 px-1">AI_PROVIDER</code> to openai, anthropic or
+              gemini to get a real reading.
+            </p>
+          </div>
+        </div>
+      )}
       <header className="mx-auto mb-8 max-w-3xl text-center">
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-gold-400 print-muted">
           {mode === 'couple' ? 'Couples Compatibility' : FOCUS_LABELS[focus]} · {title}
