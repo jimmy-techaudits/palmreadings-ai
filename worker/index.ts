@@ -4,15 +4,43 @@ import { handleContact } from '../server/api/contact';
 import { handleFeedback } from '../server/api/feedback';
 import { handleReading } from '../server/api/reading';
 import { handleAdmin, handleSavedReading } from '../server/api/readings';
+import {
+  handleCheckout,
+  handleCheckoutStatus,
+  handleConfig,
+  handleMockCheckout,
+  handleStripeWebhook,
+  handleUnlock,
+  handleUnsubscribe,
+} from '../server/api/payments';
 import type { Env } from '../server/env';
 import { expireOldPhotos } from '../server/store';
+import { purgeFreeClaims } from '../server/payments';
 import { purgeRateLimits } from '../server/protect';
 
 const POST_API: Record<string, (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>> = {
   '/api/reading': handleReading,
   '/api/feedback': handleFeedback,
   '/api/contact': handleContact,
+  '/api/checkout': handleCheckout,
+  '/api/stripe/webhook': handleStripeWebhook,
 };
+
+/** Payment routes with an id or a GET method. Returns null when the path isn't one of them. */
+async function routePayments(request: Request, env: Env, ctx: ExecutionContext, path: string): Promise<Response | null> {
+  if (path === '/api/config' && request.method === 'GET') return handleConfig(request, env);
+  if (path === '/api/unsubscribe' && (request.method === 'GET' || request.method === 'POST')) return handleUnsubscribe(request, env, ctx);
+  const mock = path.match(/^\/api\/checkout\/mock\/([A-Za-z0-9_]+)$/);
+  if (mock && request.method === 'GET') return handleMockCheckout(request, env, mock[1]);
+  const status = path.match(/^\/api\/checkout\/([A-Za-z0-9_]+)$/);
+  if (status && request.method === 'GET') return handleCheckoutStatus(request, env, status[1]);
+  const unlock = path.match(/^\/api\/readings\/([^/]+)\/unlock$/);
+  if (unlock && request.method === 'POST') {
+    if (!READING_ID_RE.test(unlock[1])) return Response.json({ error: 'Not found' }, { status: 404 });
+    return handleUnlock(request, env, ctx, unlock[1]);
+  }
+  return null;
+}
 
 /**
  * Marks HTML pages for visitors from countries where analytics cookies need consent first, so the page
@@ -47,6 +75,7 @@ export default {
       }),
     );
     ctx.waitUntil(purgeRateLimits(env));
+    ctx.waitUntil(purgeFreeClaims(env));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -63,6 +92,8 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   }
 
   if (path.startsWith('/api/')) {
+    const payments = await routePayments(request, env, ctx, path);
+    if (payments) return payments;
     const post = POST_API[path];
     if (post) {
       if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: { allow: 'POST' } });

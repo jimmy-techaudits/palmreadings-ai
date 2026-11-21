@@ -1,8 +1,9 @@
 // Google Workspace connection: one Google Apps Script web app (google-apps-script/Code.gs) that
-// emails contact messages from your Workspace account and logs messages, feedback and usage to a Sheet.
+// emails contact messages and reading links from your Workspace account, and logs messages, feedback,
+// usage and email subscribers to a Sheet.
 import type { Env } from './env';
 
-export type GoogleAction = 'contact' | 'feedback' | 'usage';
+export type GoogleAction = 'contact' | 'feedback' | 'usage' | 'email' | 'subscriber';
 
 /**
  * Sends one event to the Apps Script. Returns true only if the script confirmed it ({"ok": true}).

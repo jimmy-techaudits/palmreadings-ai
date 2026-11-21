@@ -48,7 +48,7 @@ function num(v: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-async function sha256(text: string): Promise<string> {
+export async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
@@ -58,7 +58,7 @@ export function clientIp(request: Request): string | null {
   return request.headers.get('cf-connecting-ip');
 }
 
-const isLocal = (request: Request) => ['localhost', '127.0.0.1', '0.0.0.0'].includes(new URL(request.url).hostname);
+export const isLocal = (request: Request) => ['localhost', '127.0.0.1', '0.0.0.0'].includes(new URL(request.url).hostname);
 
 function windowId(window: 'hour' | 'day', now: Date): string {
   const iso = now.toISOString();

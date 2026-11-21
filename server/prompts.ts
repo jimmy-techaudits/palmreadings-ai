@@ -1,4 +1,4 @@
-import type { Curious, PersonObservation, ReadingRequest } from '../shared/types';
+import type { Curious, PersonObservation, Reading, ReadingRequest } from '../shared/types';
 import { FOCUS_LABELS, sectionPlan } from '../shared/plan';
 import { RULEBOOK } from './rulebook';
 
@@ -51,33 +51,67 @@ const CURIOUS_TEXT: Record<Curious, string> = {
   life_changes: 'when major life changes will happen (the timeline and the turning point answer)',
 };
 
-export function interpretUserText(req: ReadingRequest, observations: PersonObservation[]): string {
-  const plan = sectionPlan(req.mode, req.focus, req.people, req.includeFamily);
-  const people = req.people
+/** What the writing steps need to know about a reading (no photos). */
+export type ReadingContext = Pick<ReadingRequest, 'mode' | 'focus' | 'includeFamily' | 'people' | 'curious'>;
+
+function peopleText(ctx: ReadingContext): string {
+  return ctx.people
     .map((p, i) => {
-      const label = req.mode === 'couple' ? (i === 0 ? 'Person A' : 'Person B') : 'The person';
-      return `${label}: name ${p.name?.trim() || (req.mode === 'couple' ? `Partner ${i === 0 ? 'A' : 'B'}` : 'not given')}, age ${p.age ?? 'not given'}, pronouns ${p.pronouns || 'they/them'}, dominant hand ${p.dominantHand}.`;
+      const label = ctx.mode === 'couple' ? (i === 0 ? 'Person A' : 'Person B') : 'The person';
+      return `${label}: name ${p.name?.trim() || (ctx.mode === 'couple' ? `Partner ${i === 0 ? 'A' : 'B'}` : 'not given')}, age ${p.age ?? 'not given'}, pronouns ${p.pronouns || 'they/them'}, dominant hand ${p.dominantHand}.`;
     })
     .join('\n');
+}
 
-  const sections = plan.map((s, i) => `${i + 1}. id "${s.id}", title "${s.title}": ${s.guidance}`).join('\n');
-
-  const family = req.includeFamily
-    ? `\nThe person opted in to marriage and children predictions. Fill "family" from the relationship and children lines (rulebook), using the dominant hand's side view: give the count as a number or small range, honest confidence and visibility. If the lines were not readable, use "?" with visibility "not_assessable" and say so in the explanation.`
+function extras(ctx: ReadingContext, familyPart: 'numbers' | 'explanations'): string {
+  const family = ctx.includeFamily
+    ? familyPart === 'numbers'
+      ? `\nThe person opted in to marriage and children predictions. Fill "family" from the relationship and children lines (rulebook), using the dominant hand's side view: give the count as a number or small range, honest confidence and visibility, and a one-sentence summary. If the lines were not readable, use "?" with visibility "not_assessable" and say so in the summary.`
+      : `\nExplain the marriage and children numbers already given (do not change them) in "family", and give the timing.`
     : `\nMarriage and children predictions were not requested (no side photo), so do not predict numbers of marriages or children anywhere.`;
-
-  const age = req.people.some((p) => p.age) ? ' Use their age with the timing scale to say which phases are past, present and ahead.' : '';
+  const age = ctx.people.some((p) => p.age) ? ' Use their age with the timing scale to say which phases are past, present and ahead.' : '';
   const curious =
-    req.curious && req.mode === 'solo'
-      ? `\nThey are most curious about ${CURIOUS_TEXT[req.curious]}. Give that area the most depth and the most direct answer.`
+    ctx.curious && ctx.mode === 'solo'
+      ? `\nThey are most curious about ${CURIOUS_TEXT[ctx.curious]}. Give that area the most depth and the most direct answer.`
       : '';
+  return `${family}${age}${curious}`;
+}
 
-  return `Reading type: ${req.mode === 'couple' ? 'Couples compatibility' : FOCUS_LABELS[req.focus]}.
+/** The free preview: headline, summary, life at a glance, what each hand shows, family numbers. */
+export function previewUserText(ctx: ReadingContext, observations: PersonObservation[]): string {
+  return `Reading type: ${ctx.mode === 'couple' ? 'Couples compatibility' : FOCUS_LABELS[ctx.focus]}.
 
-${people}
+${peopleText(ctx)}
+
+Write the opening of the reading: the headline, the summary, ${ctx.mode === 'solo' ? 'the life-at-a-glance answers' : 'the at-a-glance traits'}, a note on each hand with one sentence per visible line, and the family numbers if requested. Each summary sentence should stand on its own and be specific to these hands. The full sections are written separately later.${extras(ctx, 'numbers')}
+
+Observations (JSON, one entry per person in the order above):
+${JSON.stringify(observations)}`;
+}
+
+/** The paid part: every section, the timeline, career paths, family explanations, reflection and closing. */
+export function fullUserText(ctx: ReadingContext, observations: PersonObservation[], preview: Reading): string {
+  const plan = sectionPlan(ctx.mode, ctx.focus, ctx.people, ctx.includeFamily);
+  const sections = plan.map((s, i) => `${i + 1}. id "${s.id}", title "${s.title}": ${s.guidance}`).join('\n');
+  const shown = {
+    headline: preview.headline,
+    summary: preview.summary,
+    glance: preview.glance,
+    traits: preview.traits,
+    family: preview.family,
+    hand_notes: preview.hand_notes,
+  };
+  return `Reading type: ${ctx.mode === 'couple' ? 'Couples compatibility' : FOCUS_LABELS[ctx.focus]}.
+
+${peopleText(ctx)}
+
+The person has already seen the opening of their reading (below). Write the rest of it. Stay consistent with every answer already given and do not repeat it word for word: go deeper.
 
 Write exactly these sections, in this order:
-${sections}${family}${age}${curious}
+${sections}${extras(ctx, 'explanations')}
+
+Already shown (JSON):
+${JSON.stringify(shown)}
 
 Observations (JSON, one entry per person in the order above):
 ${JSON.stringify(observations)}`;

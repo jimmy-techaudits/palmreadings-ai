@@ -3,6 +3,7 @@ import { photoSlots } from '../shared/plan';
 
 const MAX_PHOTO_BYTES = 2_500_000; // base64 length; the client sends ~1600px JPEGs
 const SLOT_RE = /^p[01]-(left|right)-(palm|side)$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /** Returns an error message, or null if the request is valid. */
 export function validateRequest(body: unknown): string | null {
@@ -20,6 +21,8 @@ export function validateRequest(body: unknown): string | null {
   }
   if (r.marketingConsent !== undefined && typeof r.marketingConsent !== 'boolean') return 'Invalid marketingConsent';
   if (r.curious !== undefined && !(CURIOUS_TOPICS as readonly string[]).includes(r.curious)) return 'Invalid curious';
+  if (r.email !== undefined && (typeof r.email !== 'string' || r.email.length > 200 || !EMAIL_RE.test(r.email.trim()))) return 'Please enter a valid email address.';
+  if (r.paidSession !== undefined && (typeof r.paidSession !== 'string' || r.paidSession.length > 200)) return 'Invalid payment';
   if (!Array.isArray(r.photos) || r.photos.length > 6) return 'Invalid photos';
   const allowed = new Set(photoSlots(r.people, r.includeFamily).map((s) => s.slot));
   for (const ph of r.photos) {

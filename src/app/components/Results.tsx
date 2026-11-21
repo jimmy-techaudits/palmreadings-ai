@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { ArrowRight, ChevronDown, FlaskConical, Printer, RotateCcw } from 'lucide-react';
+import { ArrowRight, ChevronDown, FlaskConical, Loader2, Lock, Printer, RotateCcw } from 'lucide-react';
 import type { Curious, FamilyPrediction, GlanceItem, Hand, HandObservation, LineKey, Reading, ReadingSection, Seen } from '../../../shared/types';
-import { FOCUS_LABELS } from '../../../shared/plan';
+import { FOCUS_LABELS, sectionPlan } from '../../../shared/plan';
+import { formatPrice } from '../lib/api';
 import type { SavedReading } from '../lib/storage';
 import { HandDiagram } from './HandDiagram';
 import { HandExplorer } from './HandExplorer';
@@ -34,9 +35,18 @@ interface ResultsProps {
   photosRemoved?: boolean;
   marketingConsent?: { value: boolean; onChange: (v: boolean) => Promise<void> };
   onDelete?: () => Promise<void>;
+  /** A free preview: shows the unlock card instead of the full sections. */
+  locked?: {
+    /** Price in cents. */
+    price: number;
+    payments: 'stripe' | 'mock' | 'off';
+    onUnlock: () => Promise<void>;
+    /** While the paid part is being written (after payment), or why it couldn't be. */
+    status?: { state: 'writing' } | { state: 'error'; message: string; onRetry: () => void };
+  };
 }
 
-export function Results({ saved, onReset, readingId, photos, photosRemoved, marketingConsent, onDelete }: ResultsProps) {
+export function Results({ saved, onReset, readingId, photos, photosRemoved, marketingConsent, onDelete, locked }: ResultsProps) {
   const { reading, observations, mode, focus, names, dominantHands } = saved;
   const who = mode === 'couple' ? `${names[0] || 'Partner A'} & ${names[1] || 'Partner B'}` : names[0] ? `${names[0]}’s reading` : 'Your reading';
   const personName = (i: number) => names[i] || (i === 0 ? 'Partner A' : 'Partner B');
@@ -48,16 +58,31 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
   };
   const bothHands = (i: number) => (['left', 'right'] as Hand[]).flatMap((s) => observations[i]?.hands.filter((h) => h.hand === s) ?? []);
 
+  // The paid part is missing on a free preview.
+  const allSections = reading.sections ?? [];
   // The section that answers what they were most curious about comes first.
-  const curiousId = reading.curious ? CURIOUS_SECTIONS[reading.curious].find((id) => reading.sections.some((s) => s.id === id)) : undefined;
-  const compare = reading.sections.find((s) => s.id === 'potential_vs_path');
+  const curiousId = reading.curious ? CURIOUS_SECTIONS[reading.curious].find((id) => allSections.some((s) => s.id === id)) : undefined;
+  const compare = allSections.find((s) => s.id === 'potential_vs_path');
   const sections = useMemo(() => {
-    const rest = reading.sections.filter((s) => s.id !== 'potential_vs_path');
+    const rest = allSections.filter((s) => s.id !== 'potential_vs_path');
     return [...rest.filter((s) => s.id === curiousId), ...rest.filter((s) => s.id !== curiousId)];
-  }, [reading, curiousId]);
-  const familyInSection = reading.sections.some((s) => s.id === 'marriage_family');
+  }, [allSections, curiousId]);
+  const familyInSection = allSections.some((s) => s.id === 'marriage_family');
   const timelineFirst = reading.curious === 'life_changes';
-  const careerId = ['career', 'strengths', 'work_style'].find((id) => reading.sections.some((x) => x.id === id));
+  const careerId = ['career', 'strengths', 'work_style'].find((id) => allSections.some((x) => x.id === id));
+  // On a preview, the plan of what unlocking adds.
+  const lockedTitles = useMemo(
+    () =>
+      locked
+        ? sectionPlan(
+            mode,
+            focus,
+            names.map((n) => ({ name: n, dominantHand: 'right' as Hand })),
+            !!reading.family,
+          ).map((s) => s.title)
+        : [],
+    [locked, mode, focus, names, reading.family],
+  );
 
   const navItems = useMemo<NavItem[]>(() => {
     const timeline = reading.timeline?.length ? [{ id: 's-timeline', label: 'Life timeline', color: LINE_COLORS.life }] : [];
@@ -68,10 +93,10 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
       ...(compare ? [{ id: `s-${compare.id}`, label: compare.title, color: lineColor(compare.lines) }] : []),
       ...(timelineFirst ? [] : timeline),
       ...sections.map((s) => ({ id: `s-${s.id}`, label: s.title, color: lineColor(s.lines) })),
-      ...(reading.family && !familyInSection ? [{ id: 's-family', label: 'Marriage & Family', color: LINE_COLORS.heart }] : []),
-      { id: 's-reflection', label: 'Reflection', color: '#c9b8f0' },
+      ...(reading.family && !familyInSection && !locked ? [{ id: 's-family', label: 'Marriage & Family', color: LINE_COLORS.heart }] : []),
+      locked ? { id: 's-unlock', label: 'Your full reading', color: '#f6c77f' } : { id: 's-reflection', label: 'Reflection', color: '#c9b8f0' },
     ];
-  }, [reading, sections, compare, familyInSection, timelineFirst]);
+  }, [reading, sections, compare, familyInSection, timelineFirst, locked]);
   const active = useActiveSection(navItems);
 
   const timeline = reading.timeline?.length ? <LifeTimeline entries={reading.timeline} /> : null;
@@ -89,7 +114,14 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
             {readingId && <PrivateLink />}
 
             {reading.glance ? (
-              <LifeAtAGlance glance={reading.glance} family={reading.family} curious={reading.curious} sectionIds={reading.sections.map((s) => s.id)} careerId={careerId} />
+              <LifeAtAGlance
+                glance={reading.glance}
+                family={reading.family}
+                curious={reading.curious}
+                sectionIds={allSections.map((s) => s.id)}
+                careerId={careerId}
+                lockedHref={locked ? '#s-unlock' : undefined}
+              />
             ) : (
               <>
                 {reading.traits && <AtAGlance traits={reading.traits} />}
@@ -119,7 +151,9 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
               );
             })}
 
-            {reading.family && !familyInSection && (
+            {locked && <UnlockCard titles={lockedTitles} hasTimeline={mode === 'solo'} {...locked} />}
+
+            {reading.family && !familyInSection && !locked && (
               <section id="s-family" className={CARD}>
                 <p className="eyebrow print-muted">Marriage & family</p>
                 <h2 className="mt-2 font-display text-[30px] font-medium text-white print-dark">What the lines suggest</h2>
@@ -129,12 +163,14 @@ export function Results({ saved, onReset, readingId, photos, photosRemoved, mark
               </section>
             )}
 
-            <Reflection steps={reading.action_steps} />
+            {reading.action_steps && <Reflection steps={reading.action_steps} />}
 
-            <section className="relative overflow-hidden rounded-card-lg border border-gold-400/30 bg-[linear-gradient(135deg,rgba(40,22,84,0.7),rgba(10,8,24,0.9))] px-6 py-10 text-center sm:px-10">
-              <p className="eyebrow print-muted">{reading.closing.kind === 'mantra' ? 'Your mantra' : 'A question to sit with'}</p>
-              <p className="mt-3 font-accent text-[32px] font-medium italic leading-snug text-white sm:text-[38px] print-dark">“{reading.closing.text}”</p>
-            </section>
+            {reading.closing && (
+              <section className="relative overflow-hidden rounded-card-lg border border-gold-400/30 bg-[linear-gradient(135deg,rgba(40,22,84,0.7),rgba(10,8,24,0.9))] px-6 py-10 text-center sm:px-10">
+                <p className="eyebrow print-muted">{reading.closing.kind === 'mantra' ? 'Your mantra' : 'A question to sit with'}</p>
+                <p className="mt-3 font-accent text-[32px] font-medium italic leading-snug text-white sm:text-[38px] print-dark">“{reading.closing.text}”</p>
+              </section>
+            )}
           </div>
           <BottomNav items={navItems} active={active} />
 
@@ -227,6 +263,8 @@ interface GlanceCardData {
   /** Marriage and children values are numbers and read larger. */
   big?: boolean;
   note: string;
+  /** One plain sentence on what it means. */
+  summary?: string;
   seen?: Seen;
   href?: string;
 }
@@ -237,31 +275,34 @@ function LifeAtAGlance({
   curious,
   sectionIds,
   careerId,
+  lockedHref,
 }: {
   glance: NonNullable<Reading['glance']>;
   family: Reading['family'];
   curious?: Curious;
   sectionIds: string[];
   careerId?: string;
+  /** On a preview, cards link to the unlock card instead of sections that aren't written yet. */
+  lockedHref?: string;
 }) {
   const has = (id: string) => sectionIds.includes(id);
-  const familyHref = has('marriage_family') ? '#s-marriage_family' : undefined;
+  const familyHref = has('marriage_family') ? '#s-marriage_family' : lockedHref;
 
-  const fromItem = (g: GlanceItem) => ({ value: g.answer, note: g.detail, seen: g.visibility });
-  const fromFamily = (p: FamilyPrediction | undefined, one: string, many: string): Pick<GlanceCardData, 'value' | 'big' | 'note' | 'seen'> =>
+  const fromItem = (g: GlanceItem) => ({ value: g.answer, note: g.detail, summary: g.summary, seen: g.visibility });
+  const fromFamily = (p: FamilyPrediction | undefined, one: string, many: string): Pick<GlanceCardData, 'value' | 'big' | 'note' | 'summary' | 'seen'> =>
     p
       ? p.range.trim() === '?' || p.visibility === 'not_assessable'
         ? { value: 'Can’t read from these photos', note: 'The lines were too fine to see clearly.', seen: 'not_assessable' }
-        : { value: `${p.range} ${countLabel(p.range, one, many).toLowerCase()}`, big: true, note: `${capFirst(p.confidence)} confidence`, seen: p.visibility }
+        : { value: `${p.range} ${countLabel(p.range, one, many).toLowerCase()}`, big: true, note: `${capFirst(p.confidence)} confidence`, summary: p.summary, seen: p.visibility }
       : { value: 'Not included', note: 'Needs a photo of the side of your hand. Start a new reading to add it.' };
 
   const cards: GlanceCardData[] = [
     { key: 'marriage', topic: 'marriage', label: 'Marriage', href: familyHref, ...fromFamily(family?.marriages, 'Marriage', 'Marriages') },
     { key: 'children', topic: 'children', label: 'Children', href: familyHref, ...fromFamily(family?.children, 'Child', 'Children') },
-    { key: 'career', topic: 'career', label: 'Career', href: careerId ? `#s-${careerId}` : undefined, ...fromItem(glance.career) },
-    { key: 'money', topic: 'money', label: 'Money', href: has('money') ? '#s-money' : undefined, ...fromItem(glance.money) },
-    { key: 'turning', topic: 'life_changes', label: 'Biggest turning point', href: '#s-timeline', ...fromItem(glance.turning_point) },
-    { key: 'path', topic: 'life_path', label: 'Life path', href: has('potential_vs_path') ? '#s-potential_vs_path' : undefined, ...fromItem(glance.life_path) },
+    { key: 'career', topic: 'career', label: 'Career', href: careerId ? `#s-${careerId}` : lockedHref, ...fromItem(glance.career) },
+    { key: 'money', topic: 'money', label: 'Money', href: has('money') ? '#s-money' : lockedHref, ...fromItem(glance.money) },
+    { key: 'turning', topic: 'life_changes', label: 'Biggest turning point', href: lockedHref ?? '#s-timeline', ...fromItem(glance.turning_point) },
+    { key: 'path', topic: 'life_path', label: 'Life path', href: has('potential_vs_path') ? '#s-potential_vs_path' : lockedHref, ...fromItem(glance.life_path) },
   ];
   const ordered = curious ? [...cards.filter((c) => c.topic === curious), ...cards.filter((c) => c.topic !== curious)] : cards;
 
@@ -281,7 +322,8 @@ function LifeAtAGlance({
                 {asked && <span className="whitespace-nowrap rounded-full bg-gold-400 px-2.5 py-0.5 text-xs font-medium text-plum-900">You asked</span>}
               </span>
               <span className={`font-display leading-[1.15] text-white print-dark ${c.big ? 'text-[26px]' : c.seen ? 'text-[21px]' : 'text-lg text-ink-soft'}`}>{c.value}</span>
-              <span className="text-sm text-ink-muted print-muted">{c.note}</span>
+              {c.summary && <span className="text-[15px] leading-snug text-ink-soft print-dark">{c.summary}</span>}
+              <span className={c.summary ? 'text-xs text-ink-subtle print-muted' : 'text-sm text-ink-muted print-muted'}>{c.note}</span>
               {c.seen && (
                 <span className="mt-auto inline-flex items-center gap-2 pt-2 text-xs" style={{ color: SEEN_COLORS[c.seen] }}>
                   <span aria-hidden className="size-2 rounded-full" style={{ background: SEEN_COLORS[c.seen] }} />
@@ -359,6 +401,7 @@ function FamilyCards({ family }: { family: NonNullable<Reading['family']> }) {
             <span className="font-display text-[26px] leading-[1.15] text-white print-dark">
               {p.range} {countLabel(p.range, one, many)}
             </span>
+            {p.summary && <span className="text-[15px] leading-snug text-ink-soft">{p.summary}</span>}
             {p.visibility && (
               <span className="mt-1 inline-flex items-center gap-2 text-xs" style={{ color: SEEN_COLORS[p.visibility] }}>
                 <span aria-hidden className="size-2 rounded-full" style={{ background: SEEN_COLORS[p.visibility] }} /> {SEEN_LABELS[p.visibility]}
@@ -369,6 +412,97 @@ function FamilyCards({ family }: { family: NonNullable<Reading['family']> }) {
       </div>
       <p className="mt-3.5 text-xs leading-relaxed text-ink-faint print-muted">{DISCLAIMER}</p>
     </div>
+  );
+}
+
+// ---------- Unlock (free preview) ----------
+
+function UnlockCard({
+  titles,
+  hasTimeline,
+  price,
+  payments,
+  onUnlock,
+  status,
+}: { titles: string[]; hasTimeline: boolean } & NonNullable<ResultsProps['locked']>) {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState('');
+  async function unlock() {
+    setBusy(true);
+    setFailed('');
+    try {
+      await onUnlock();
+    } catch (e) {
+      setFailed(e instanceof Error ? e.message : 'We could not start the checkout. Please try again.');
+      setBusy(false);
+    }
+  }
+  const items = [...titles, ...(hasTimeline ? ['Your life timeline'] : []), 'Personal reflection and mantra'];
+
+  if (status?.state === 'writing') {
+    return (
+      <section id="s-unlock" className={`${CARD} border-gold-400/40 text-center`} aria-live="polite">
+        <Loader2 size={36} className="mx-auto animate-spin text-gold-400" aria-hidden="true" />
+        <p className="eyebrow mt-5">Thank you</p>
+        <h2 className="mt-2 font-display text-[30px] font-medium text-white">
+          Writing your full <em className="accent">reading</em>
+        </h2>
+        <p className="mx-auto mt-3 max-w-[520px] text-base text-ink-muted">
+          Every section is being written from your hands now. This usually takes a minute or two; it will appear right here.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section id="s-unlock" className="scroll-mt-6 overflow-hidden rounded-card-lg border border-gold-400/40 bg-[linear-gradient(160deg,rgba(40,22,84,0.8),rgba(14,10,34,0.85))] shadow-panel">
+      <div className="p-6 sm:p-9">
+        <p className="eyebrow">Your full reading</p>
+        <h2 className="mt-2 font-display text-[clamp(28px,3vw,36px)] font-medium leading-tight text-white">
+          There’s more in your <em className="accent">hands</em>
+        </h2>
+        <p className="mt-3 max-w-[620px] text-base text-ink-muted">
+          Unlock the rest of this reading: every section written from your own lines, with the timeline and the paths that fit you. It opens right here, on
+          this page.
+        </p>
+
+        {status?.state === 'error' && (
+          <div role="alert" className="mt-6 rounded-card-sm border border-[#f28ba8]/35 bg-[#f28ba8]/[0.08] px-4 py-3 text-base text-[#ffd0dc]">
+            {status.message}{' '}
+            <button type="button" onClick={status.onRetry} className="font-medium text-white underline underline-offset-4">
+              Try again
+            </button>
+          </div>
+        )}
+
+        <ul className="mt-6 grid gap-2.5 sm:grid-cols-2">
+          {items.map((t) => (
+            <li key={t} className="flex items-center gap-3 rounded-card-sm border border-lavender-300/12 bg-[rgba(6,6,15,0.45)] px-4 py-3 text-base text-ink-soft">
+              <Lock size={16} className="shrink-0 text-gold-400" aria-hidden="true" />
+              {t}
+            </li>
+          ))}
+        </ul>
+
+        {failed && (
+          <p role="alert" className="mt-5 text-base text-[#ffb3c1]">
+            {failed}
+          </p>
+        )}
+        <Button onClick={unlock} disabled={busy || payments === 'off'} className="mt-7 w-full sm:w-auto">
+          {busy ? <Loader2 size={20} className="animate-spin" aria-hidden="true" /> : <Lock size={18} aria-hidden="true" />}
+          {payments === 'off' ? 'Unlocking is coming soon' : `Unlock your full reading · ${formatPrice(price)}`}
+        </Button>
+        <p className="mt-3 text-sm text-ink-subtle">
+          {payments === 'mock' ? <strong className="text-gold-300">Test mode: no real payment is taken. </strong> : 'One-time payment, processed securely by Stripe. '}
+          See our{' '}
+          <a href="/refund-policy/" className="text-gold-400 underline underline-offset-4">
+            Refund Policy
+          </a>
+          .
+        </p>
+      </div>
+    </section>
   );
 }
 
@@ -517,7 +651,7 @@ function FamilyDetails({ family }: { family: NonNullable<Reading['family']> }) {
         <Prediction label="Significant marriages or partnerships" p={family.marriages} one="marriage" many="marriages" />
         <Prediction label="Potential children" p={family.children} one="child" many="children" />
       </div>
-      <p className="mt-4 text-base leading-relaxed text-ink-soft print-dark">{family.timing}</p>
+      {family.timing && <p className="mt-4 text-base leading-relaxed text-ink-soft print-dark">{family.timing}</p>}
       <p className="mt-3 text-xs leading-relaxed text-ink-faint print-muted">
         These numbers come from the relationship and children lines on the edge of your palm, as traditional palmistry reads them. They are not predictions of how
         many marriages or children you will have, and family comes in many forms.
@@ -546,7 +680,7 @@ function Prediction({ label, p, one, many }: { label: string; p: FamilyPredictio
           </span>
         )}
       </p>
-      <p className="mt-3 text-base leading-relaxed text-ink-soft print-dark">{p.explanation}</p>
+      <p className="mt-3 text-base leading-relaxed text-ink-soft print-dark">{p.explanation ?? p.summary}</p>
     </div>
   );
 }

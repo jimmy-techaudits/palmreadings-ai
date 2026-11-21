@@ -7,10 +7,12 @@ const STEPS: { stage: Stage | 'upload'; label: string }[] = [
   { stage: 'upload', label: 'Uploading your photos' },
   { stage: 'observing', label: 'Tracing your lines, mounts and hand shape' },
   { stage: 'interpreting', label: 'Writing your personal reading' },
+  { stage: 'writing_full', label: 'Writing every section of your full reading' },
 ];
 
-export function Progress({ stage, observations }: { stage: Stage | null; observations: PersonObservation[] | null }) {
-  const current = stage === null ? 0 : stage === 'observing' ? 1 : 2;
+export function Progress({ stage, observations, paid = false }: { stage: Stage | null; observations: PersonObservation[] | null; paid?: boolean }) {
+  const steps = paid ? STEPS : STEPS.slice(0, 3);
+  const current = stage === null ? 0 : stage === 'observing' ? 1 : stage === 'interpreting' ? 2 : 3;
   const highlights = observations ? collectHighlights(observations) : [];
   const [shown, setShown] = useState(0);
 
@@ -36,10 +38,12 @@ export function Progress({ stage, observations }: { stage: Stage | null; observa
       <h1 className="mt-3.5 font-display text-[clamp(34px,4vw,52px)] font-medium leading-[1.12] text-white">
         Reading your <em className="accent">hands</em>
       </h1>
-      <p className="mt-4 text-lg text-ink-muted">This usually takes under a minute. Please keep this page open.</p>
+      <p className="mt-4 text-lg text-ink-muted">
+        {paid ? 'This usually takes a minute or two.' : 'This usually takes under a minute.'} Please keep this page open.
+      </p>
 
       <ol className="mt-10 w-full space-y-3 text-left">
-        {STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const state = i < current ? 'done' : i === current ? 'current' : 'todo';
           return (
             <li

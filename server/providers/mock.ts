@@ -1,6 +1,7 @@
 // Offline provider for UI development and tests: returns canned, schema-shaped
 // data after a short delay. Select it with AI_PROVIDER=mock (the default).
 import type { HandObservation, LineObservation, PersonObservation, Reading, ReadingSection } from '../../shared/types';
+import type { FullPart } from '../schemas';
 import type { JsonRequest, Provider } from './types';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -130,17 +131,68 @@ const FALLBACK: MockSection = {
   evidence: [ev('Strongly curved heart line ending between index and middle fingers'), ev('Chain at the start of the left heart line', 'faint')],
 };
 
-function mockReading(req: JsonRequest): Reading {
+function mockPreview(req: JsonRequest): Reading {
   const props = req.schema.properties as Record<string, any>;
-  const ids: string[] = props.sections.items.properties.id.enum;
   const reading: Reading = {
     headline: 'A deep feeler with a strategist’s mind',
     summary:
       'You feel everything deeply but have learned to lead with clarity. The long, curving heart line on both hands shows a generous, expressive heart, while your dominant hand’s stronger fate line and prominent Jupiter mount show you have been steadily building authority and direction, mostly on your own.',
     hand_notes: [
-      { person: 0, hand: 'left', summary: 'Your left hand shows the raw material: a water hand with a strongly curved heart line that starts in a small chain, and a fate line that is barely there. Natural sensitivity, and no fixed direction yet.' },
-      { person: 0, hand: 'right', summary: 'Your right hand shows what you have built: the heart line has smoothed out, the fate line is clear from mid-palm, and the Jupiter mount is prominent with a triangle below the ring finger. Direction and confidence you earned.' },
+      {
+        person: 0,
+        hand: 'left',
+        summary: 'Your left hand shows your natural tendencies: deep sensitivity and a direction that wasn’t set yet.',
+        lines: [
+          { line: 'heart', note: 'A strongly curved heart line that starts in a small chain: you felt things intensely from early on.' },
+          { line: 'head', note: 'The writer’s fork at the end of your head line shows a mind that sees more than one side.' },
+          { line: 'life', note: 'A long, deep life line with a rising branch points to steady energy and growth you chose.' },
+          { line: 'fate', note: 'Only a faint fate line here: no path was handed to you.' },
+          { line: 'sun', note: 'A faint sun line hints at recognition through what you create.' },
+        ],
+      },
+      {
+        person: 0,
+        hand: 'right',
+        summary: 'Your right hand shows what you’ve built: the chain has smoothed out and a clear fate line has formed.',
+        lines: [
+          { line: 'heart', note: 'The same warm, curving heart line, now without the early chain: sensitivity turned into steadiness.' },
+          { line: 'head', note: 'Joined to your life line at the start: you think carefully before you act.' },
+          { line: 'life', note: 'Long and deep: stamina that lasts.' },
+          { line: 'fate', note: 'Clear from mid-palm: your direction firmed up in your early 30s.' },
+          { line: 'sun', note: 'Still faint, so recognition is something you are growing into.' },
+        ],
+      },
     ],
+  };
+  if (props.glance) {
+    reading.glance = {
+      career: { answer: 'Creative leadership', detail: 'Writer’s fork and a prominent Jupiter mount', summary: 'You do your best work shaping ideas and leading people, more than following a set track.', line: 'head', visibility: 'clear' },
+      money: { answer: 'Self-built wealth', detail: 'Fate line rising from the life line', summary: 'Money comes from what you build yourself, slowly at first and then steadily.', line: 'fate', visibility: 'clear' },
+      turning_point: { answer: 'Early 30s', detail: 'Fate line becomes clear from mid-palm', summary: 'Your sense of direction firmed up around your early 30s, and what you started then keeps shaping your path.', line: 'fate', visibility: 'clear' },
+      life_path: { answer: 'Self-directed', detail: 'Faint fate line on the left hand, clear on the right', summary: 'Nobody handed you a path; you made one, which means freedom and some years of uncertainty.', line: 'fate', visibility: 'faint' },
+    };
+  } else {
+    reading.traits = [
+      { label: 'Element match', value: 'Water meets Fire', line: 'none' },
+      { label: 'Love styles', value: 'Devoted and bold', line: 'heart' },
+      { label: 'Thinking', value: 'Planner and improviser', line: 'head' },
+      { label: 'Shared strength', value: 'Loyalty', line: 'heart' },
+    ];
+    reading.hand_notes = [...reading.hand_notes!, ...reading.hand_notes!.map((n) => ({ ...n, person: 1 }))];
+  }
+  if (props.family) {
+    reading.family = {
+      marriages: { range: '1–2', confidence: 'medium', visibility: 'clear', summary: 'One deep, lasting partnership stands out, with an earlier romance before it.' },
+      children: { range: '1', confidence: 'low', visibility: 'faint', summary: 'One fine line suggests one child or one deep nurturing bond; it is faint, so read it lightly.' },
+    };
+  }
+  return reading;
+}
+
+function mockFull(req: JsonRequest): FullPart {
+  const props = req.schema.properties as Record<string, any>;
+  const ids: string[] = props.sections.items.properties.id.enum;
+  const full: FullPart = {
     sections: ids.map((id) => ({
       id,
       title: id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -153,37 +205,23 @@ function mockReading(req: JsonRequest): Reading {
     ],
     closing: { kind: 'mantra', text: 'I can feel deeply and still choose clearly.' },
   };
-  if (props.glance) {
-    reading.glance = {
-      career: { answer: 'Creative leadership', detail: 'Writer’s fork and a prominent Jupiter mount', line: 'head', visibility: 'clear' },
-      money: { answer: 'Self-built wealth', detail: 'Fate line rising from the life line', line: 'fate', visibility: 'clear' },
-      turning_point: { answer: 'Early 30s', detail: 'Fate line becomes clear from mid-palm', line: 'fate', visibility: 'clear' },
-      life_path: { answer: 'Self-directed', detail: 'Faint fate line on the left hand, clear on the right', line: 'fate', visibility: 'faint' },
-    };
-    reading.career_paths = ['Creative direction', 'Product or brand strategy', 'Teaching or training', 'Running your own practice'];
-    reading.timeline = [
+  if (props.career_paths) full.career_paths = ['Creative direction', 'Product or brand strategy', 'Teaching or training', 'Running your own practice'];
+  if (props.timeline) {
+    full.timeline = [
       { when: 'Earlier life', title: 'Sensitive beginnings', detail: 'The chain at the start of your left heart line: feeling things intensely and learning to protect yourself.', area: 'love', line: 'heart', timing: 'approximate' },
       { when: 'Mid-20s to mid-30s', title: 'The significant partnership', detail: 'Your deepest relationship line sits in the middle of the palm edge.', area: 'love', line: 'none', timing: 'approximate' },
       { when: 'Early 30s', title: 'Direction firms up', detail: 'Your fate line becomes clear from mid-palm, rising from your life line.', area: 'career', line: 'fate', timing: 'approximate' },
       { when: 'Later in life', title: 'Heart over status', detail: 'The fate line runs up to the heart line: priorities shift toward what you care about. The palm gives no clear age for this.', area: 'life', line: 'fate', timing: 'unclear' },
     ];
-  } else {
-    reading.traits = [
-      { label: 'Element match', value: 'Water meets Fire', line: 'none' },
-      { label: 'Love styles', value: 'Devoted and bold', line: 'heart' },
-      { label: 'Thinking', value: 'Planner and improviser', line: 'head' },
-      { label: 'Shared strength', value: 'Loyalty', line: 'heart' },
-    ];
-    reading.hand_notes = [...reading.hand_notes!, ...reading.hand_notes!.map((n) => ({ ...n, person: 1 }))];
   }
   if (props.family) {
-    reading.family = {
-      marriages: { range: '1–2', confidence: 'medium', visibility: 'clear', explanation: 'One long, deep relationship line in the middle of the palm edge marks one significant marriage or partnership. A shorter, fainter line nearer the heart line could be an earlier serious romance.' },
-      children: { range: '1', confidence: 'low', visibility: 'faint', explanation: 'One fine vertical line rises from your main relationship line. These lines are delicate and hard to photograph, so treat this lightly.' },
+    full.family = {
+      marriages_explanation: 'One long, deep relationship line in the middle of the palm edge marks one significant marriage or partnership. A shorter, fainter line nearer the heart line could be an earlier serious romance.',
+      children_explanation: 'One fine vertical line rises from your main relationship line. These lines are delicate and hard to photograph, so treat this lightly.',
       timing: 'The deep middle line points to your most significant partnership forming roughly between your mid-20s and mid-30s.',
     };
   }
-  return reading;
+  return full;
 }
 
 export function mockProvider(): Provider {
@@ -191,7 +229,8 @@ export function mockProvider(): Provider {
     name: 'mock',
     async generateJson<T>(req: JsonRequest): Promise<T> {
       await sleep(req.step === 'observe' ? 1500 : 2500);
-      return (req.step === 'observe' ? mockObservation(req) : mockReading(req)) as T;
+      if (req.step === 'observe') return mockObservation(req) as T;
+      return (req.schemaName === 'palm_reading_full' ? mockFull(req) : mockPreview(req)) as T;
     },
   };
 }

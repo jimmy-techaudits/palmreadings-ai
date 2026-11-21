@@ -81,6 +81,7 @@ export function HandExplorer({ mode, observations, dominantHands, personName, no
 
   const dominant = dominantHands?.[person];
   const note = notes?.find((n) => n.person === person && n.hand === hand.hand);
+  const lineNote = (k: LineKey) => note?.lines?.find((l) => l.line === k)?.note;
   const photo = photos?.find((p) => p.slot === `p${person}-${hand.hand}-palm`);
   const ordered = (['left', 'right'] as const).flatMap((s) => hands.filter((h) => h.hand === s));
 
@@ -178,6 +179,7 @@ export function HandExplorer({ mode, observations, dominantHands, personName, no
                       <span className="text-sm text-ink-soft print-muted">
                         {visible ? [...words, ...l.features].join(' · ') : 'Not assessed'}
                       </span>
+                      {visible && lineNote(k) && <span className="mt-1 text-[15px] leading-snug text-white/90 print-dark">{lineNote(k)}</span>}
                       <span className="text-xs" style={{ color: SEEN_COLORS[seen] }}>
                         ● {SEEN_LABELS[seen]}
                       </span>

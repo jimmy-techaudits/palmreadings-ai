@@ -35,6 +35,10 @@ export interface ReadingRequest {
   marketingConsent?: boolean;
   /** Optional: the area the person is most curious about; shown first and given the most depth. */
   curious?: Curious;
+  /** A paid Stripe Checkout session for a reading paid up front (couples, or after the free reading is used). */
+  paidSession?: string;
+  /** Free readings: where to email the private link. Giving it means agreeing to marketing emails. */
+  email?: string;
   /** Cloudflare Turnstile token. */
   turnstileToken?: string;
 }
@@ -129,6 +133,8 @@ export interface Trait {
 export interface GlanceItem {
   answer: string;
   detail: string;
+  /** One plain sentence on what this means for the person (shown on the free preview). */
+  summary?: string;
   line: LineKey | 'none';
   visibility: Seen;
 }
@@ -156,13 +162,18 @@ export interface HandNote {
   person: number;
   hand: Hand;
   summary: string;
+  /** One sentence per visible line on what it shows on this hand. */
+  lines?: { line: LineKey; note: string }[];
 }
 
 export interface FamilyPrediction {
   /** A number or small range, e.g. "2" or "1–2". "?" when the lines could not be assessed. */
   range: string;
   confidence: 'high' | 'medium' | 'low';
-  explanation: string;
+  /** One sentence for the free preview. */
+  summary?: string;
+  /** The full explanation (paid part; on readings made before Nov 21 2026 it's always there). */
+  explanation?: string;
   /** Missing on readings made before Nov 21 2026. */
   visibility?: Seen;
 }
@@ -175,17 +186,19 @@ export interface Reading {
   /** Couples readings, and solo readings made before Nov 21 2026. */
   traits?: Trait[];
   hand_notes?: HandNote[];
-  sections: ReadingSection[];
+  /** Paid part from here on: missing on a free preview until it is unlocked. */
+  sections?: ReadingSection[];
   /** 3–5 concrete roles or fields (solo readings with a career section). */
   career_paths?: string[];
   timeline?: TimelineEntry[];
   family?: {
     marriages: FamilyPrediction;
     children: FamilyPrediction;
-    timing: string;
+    /** Paid part. */
+    timing?: string;
   };
-  action_steps: string[];
-  closing: { kind: 'mantra' | 'reflection'; text: string };
+  action_steps?: string[];
+  closing?: { kind: 'mantra' | 'reflection'; text: string };
   /** Copied from the request so the page can show that topic first. */
   curious?: Curious;
   /** True when made by the mock provider: canned text, the photos were not looked at. */
@@ -194,7 +207,7 @@ export interface Reading {
 
 // ---------- Streaming protocol (newline-delimited JSON) ----------
 
-export type Stage = 'observing' | 'interpreting';
+export type Stage = 'observing' | 'interpreting' | 'writing_full';
 
 export type StreamEvent =
   | { type: 'stage'; stage: Stage }
@@ -202,7 +215,8 @@ export type StreamEvent =
   | { type: 'observations'; observations: PersonObservation[] }
   /** id is the saved reading's private-link id, or null if saving failed. */
   | { type: 'reading'; reading: Reading; id: string | null }
-  | { type: 'error'; message: string };
+  /** code "free_used": this visitor's free reading is used; offer a paid reading. */
+  | { type: 'error'; message: string; code?: string };
 
 // ---------- Saved readings (private links) ----------
 
@@ -220,6 +234,29 @@ export interface SavedReadingData {
   /** Set once the photos have been deleted under the 3-year retention rule. */
   photosDeletedAt: string | null;
   marketingConsent: boolean;
+  /** "preview": the free part only, until paid. Readings made before Nov 21 2026 are "full". */
+  tier: ReadingTier;
+  /** Set when the full reading has been paid for (it may still need writing: see tier). */
+  paidAt: string | null;
+}
+
+export type ReadingTier = 'preview' | 'full';
+
+/** GET /api/config: prices (in cents) and whether this visitor's free reading is still available. */
+export interface SiteConfig {
+  prices: { solo: number; couple: number };
+  freeAvailable: boolean;
+  /** "mock" on localhost without Stripe keys: checkout is simulated. */
+  payments: 'stripe' | 'mock' | 'off';
+}
+
+/** GET /api/checkout/:session */
+export interface CheckoutStatus {
+  paid: boolean;
+  used: boolean;
+  kind: 'reading' | 'unlock';
+  mode: Mode;
+  readingId: string | null;
 }
 
 /** Private-link ids: 22 base64url characters (128 random bits). */

@@ -34,6 +34,9 @@ import { CONTACT_EMAIL } from '../site';
       <li>We do not use your photos to identify you, and we do not create biometric templates or identifiers from them.</li>
       <li>We use anonymized, aggregated statistics from readings (never your name) to improve the service and in our marketing.</li>
       <li>We use your palm photos in marketing only if you choose to give us permission, and you can withdraw it anytime.</li>
+      <li>Your first reading is a free preview. To give each person one free reading, we use a cookie with a random code and a scrambled (hashed) form of your IP address and email.</li>
+      <li>If you give your email on a free reading, we email you your private link and occasional updates. Every email has an unsubscribe link.</li>
+      <li>Payments are processed by Stripe. We never see or store your card number.</li>
       <li>We do not sell, rent, or trade your personal information.</li>
     </ul>
   </div>
@@ -46,6 +49,14 @@ import { CONTACT_EMAIL } from '../site';
     <li>Optional details you choose to give: first name, age, and pronouns</li>
     <li>Whether you choose to include marriage and children predictions</li>
   </ul>
+  <p>
+    <strong>When you give your email</strong> on a free reading, we collect your email address, together with the wording
+    you agreed to and the time you agreed, as a record of your consent.
+  </p>
+  <p>
+    <strong>When you buy a reading</strong>, our payment processor, Stripe, collects your payment details and email address.
+    We receive your email address, the amount paid, and whether the payment succeeded, but never your card number.
+  </p>
   <p><strong>When you contact us</strong>, we collect your name, email address, and anything you include in your message.</p>
   <p><strong>When you give feedback</strong> on a reading, we collect your rating, any comment you write, and the type of reading it was about.</p>
   <p>
@@ -82,7 +93,11 @@ import { CONTACT_EMAIL } from '../site';
 
   <h2 id="how-we-use-your-information">How We Use Your Information</h2>
   <ul>
-    <li>To create and deliver the readings you request</li>
+    <li>To create and deliver the readings you request, including the paid parts you unlock</li>
+    <li>To email you the private link to your reading</li>
+    <li>If you gave your email on a free reading, to send you occasional emails about Palm Readings AI, such as news, offers, and new reading types</li>
+    <li>To give each person one free reading and prevent misuse of free readings</li>
+    <li>To process payments and keep records of purchases</li>
     <li>To respond to your messages and support requests</li>
     <li>To store your reading and photos so you can return to them at your private link</li>
     <li>To understand how the site is used and improve our readings, content, and features</li>
@@ -96,9 +111,8 @@ import { CONTACT_EMAIL } from '../site';
   <ul>
     <li><strong>AI service providers</strong>, which analyze your photos and write your reading</li>
     <li><strong>Cloudflare</strong>, which hosts the site and protects it from attacks</li>
-    <li><strong>Google</strong>, for analytics (Google Analytics) and for our email and records of feedback and contact messages (Google Workspace)</li>
-    <li><strong>Email delivery services</strong>, which deliver contact form messages to us</li>
-    <li><strong>Payment processors</strong>, if you purchase a paid reading. Payments are handled directly by the processor; we do not see or store your full card number.</li>
+    <li><strong>Google</strong>, for analytics (Google Analytics), and for sending our emails and keeping records of contact messages, feedback, and email subscribers (Google Workspace)</li>
+    <li><strong>Stripe</strong>, which processes payments when you buy a reading. Payments are handled directly by Stripe; we do not see or store your card number.</li>
   </ul>
   <p>
     We may also disclose information if required by law, or if we believe in good faith that it is necessary to comply
@@ -152,8 +166,11 @@ import { CONTACT_EMAIL } from '../site';
     choice at any time with the “Cookie settings” link at the bottom of every page.
   </p>
   <p>
-    The reading app may also use your browser’s session storage while a reading is in progress. You can block or delete
-    cookies and site data in your browser settings.
+    We also set one cookie of our own. It holds a random code, not your name or email, and lasts two years, so we can
+    recognize your browser and give each person one free reading. It is needed for the free reading offer and is not used
+    for advertising or analytics. Your cookie choice is remembered in your browser’s local storage, and the reading app may
+    use session storage while a reading is in progress. You can block or delete cookies and site data in your browser
+    settings, though free readings may then not be available.
   </p>
 
   <h2 id="how-long-we-keep-information">How Long We Keep Information</h2>
@@ -163,6 +180,9 @@ import { CONTACT_EMAIL } from '../site';
     <li><strong>Photos you allowed us to use in marketing:</strong> may be kept in our marketing materials until you withdraw permission</li>
     <li><strong>Anonymized statistics:</strong> kept indefinitely, because they cannot be linked back to you</li>
     <li><strong>Contact messages:</strong> kept as long as needed to respond and improve the service</li>
+    <li><strong>Email subscriptions:</strong> kept until you unsubscribe. After that, we keep your address only on a do-not-email list so we don’t contact you again.</li>
+    <li><strong>Free reading records:</strong> scrambled (hashed) codes for your browser, email, and IP address, kept for one year</li>
+    <li><strong>Purchase records:</strong> kept as long as required for tax and accounting</li>
     <li><strong>Security and server logs:</strong> kept for a limited period by our hosting provider</li>
   </ul>
   <p>We may also delete readings that violate our Terms, or as required by law.</p>
@@ -215,8 +235,11 @@ import { CONTACT_EMAIL } from '../site';
 
   <h2 id="email-communications">Email Communications</h2>
   <p>
-    If you contact us, we will reply by email. If we offer email updates, we will only send them if you sign up, and you
-    can unsubscribe at any time.
+    If you enter your email on a free reading, we email you your private reading link, and you agree to receive occasional
+    emails from us, such as news, offers, and new reading types. We record the wording you agreed to and when. Every email
+    includes an unsubscribe link and our postal address, and unsubscribing takes effect right away. If you buy a reading,
+    we email the link to the address you used at checkout, and we send marketing emails to it only if you have signed up.
+    If you contact us, we will reply by email.
   </p>
 
   <h2 id="changes-to-this-privacy-policy">Changes to This Privacy Policy</h2>

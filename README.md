@@ -29,9 +29,13 @@ section; everything else uses `src/layouts/Base.astro` (header and footer).
 4. **Server pipeline** (`server/pipeline.ts`), streamed to the browser as progress events:
    - **Observe** – one vision call per person returns structured data on what is visible and flags
      unusable photos.
-   - **Interpret** – one text-only call writes the reading from those observations plus the
-     palmistry rulebook (`server/rulebook.ts`) in a fixed structure (`server/schemas.ts`). Each
-     section lists the features it is based on.
+   - **Preview** – a text-only call writes the free part (headline, summary, life at a glance, what
+     each hand shows, marriage and children numbers) from those observations plus the palmistry
+     rulebook (`server/rulebook.ts`), in a fixed structure (`server/schemas.ts`).
+   - **Full** – after payment (right away for readings paid up front, or later when a preview is
+     unlocked), a second text-only call writes every section, the timeline, career paths, family
+     explanations, reflection and mantra from the stored observations, consistent with the preview.
+     Each section lists the features it is based on.
 5. **Saved at a private link** – the reading (D1) and its photos (R2) are stored and the browser moves to `/r/<id>/` (a 128-bit random id, not indexed by search engines). Anyone with
    the link can view or delete it. No user accounts. Readings are kept until deleted; **photos are
    deleted 3 years after the link was last opened** by a daily cron job (`expireOldPhotos` in
@@ -154,7 +158,7 @@ Without these settings, contact messages are only printed in the terminal (fine 
 
 ## Launch checklist
 
-Do these in order. Nothing changes for visitors until the nameservers move (step 6).
+Do these in order. Nothing changes for visitors until the nameservers move (step 7).
 
 1. **Back up WordPress**: Tools → Export (done), plus a full EasyWP backup. Images are already self-hosted.
 2. **Cloudflare account** (free plan) and `npx wrangler login` on your Mac.
@@ -169,26 +173,35 @@ Do these in order. Nothing changes for visitors until the nameservers move (step
    `PUBLIC_TURNSTILE_SITE_KEY` (it's built into the pages).
 5. **Secrets** (`npx wrangler secret put NAME` for each), then `npm run deploy` and test everything on the
    `*.workers.dev` address (it is automatically kept out of search engines):
+   - Apply the database migrations again whenever `migrations/` changes:
+     `npx wrangler d1 migrations apply palmreadings --remote`.
    - `OPENAI_API_KEY` (and `ANTHROPIC_API_KEY` if you switch providers). `AI_PROVIDER` and the models are
      set in `wrangler.jsonc`.
    - `TURNSTILE_SECRET_KEY`, `RATE_LIMIT_SALT` (any long random string), `ADMIN_TOKEN` (for deletion requests).
    - `GOOGLE_SCRIPT_URL`, `GOOGLE_SCRIPT_SECRET` (see above).
+   - `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (next step).
    - Set a monthly spending limit in your OpenAI account.
-6. **Move the domain**: add palmreadings.ai to Cloudflare, which copies the existing DNS records. Check every
+6. **Stripe**: create an account (test mode first). Developers → API keys → copy the secret key into
+   `STRIPE_SECRET_KEY`. Developers → Webhooks → Add endpoint `https://<your workers.dev host or
+   palmreadings.ai>/api/stripe/webhook` with the events `checkout.session.completed` and
+   `checkout.session.async_payment_succeeded`; copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Test a
+   purchase with card 4242 4242 4242 4242, then switch both keys to live mode (and add the live webhook)
+   before launch. In Stripe's settings, turn on email receipts and set the statement descriptor.
+7. **Move the domain**: add palmreadings.ai to Cloudflare, which copies the existing DNS records. Check every
    record against Namecheap's Advanced DNS, especially the **Google Workspace email records**: the MX
    records, the SPF TXT (`v=spf1 include:_spf.google.com ~all`), DKIM (`google._domainkey`), DMARC
    (`_dmarc`) and any Google site-verification TXT. Missing any of these breaks email. Then switch the
    nameservers at Namecheap to Cloudflare's two.
-7. **Attach the domain**: once Cloudflare shows the domain as active, uncomment the `routes` block in
+8. **Attach the domain**: once Cloudflare shows the domain as active, uncomment the `routes` block in
    `wrangler.jsonc` and `npm run deploy` again (attaches palmreadings.ai, www and app). In Cloudflare →
    SSL/TLS → Edge Certificates, turn on **Always Use HTTPS**.
-8. **Check**: every page, a full reading, the contact form (a message arrives in hello@ and in the Sheet),
+9. **Check**: every page, a full reading, the contact form (a message arrives in hello@ and in the Sheet),
    an email to and from hello@palmreadings.ai, and that www.palmreadings.ai and app.palmreadings.ai
    redirect. `https://palmreadings.ai/robots.txt` should show the sitemap line, not "Disallow: /".
-9. **Search engines**: in Google Search Console (and Bing Webmaster Tools), submit
+10. **Search engines**: in Google Search Console (and Bing Webmaster Tools), submit
    `https://palmreadings.ai/sitemap.xml` and request indexing of the home page. Old WordPress sitemap,
    feed and archive URLs already redirect.
-10. **Cancel EasyWP** once everything has worked for a few days.
+11. **Cancel EasyWP** once everything has worked for a few days.
 
 ## SEO
 
@@ -236,24 +249,37 @@ after two days by the daily cron.
 with `npx wrangler secret put TURNSTILE_SECRET_KEY`. Also set `RATE_LIMIT_SALT` as a secret. To try it
 locally, use Cloudflare's test keys from `.dev.vars.example`.
 
-## Agreed plan for payments and free readings (not built yet)
+## Payments and the free reading
 
-- **Free reading:** one per visitor. It generates the full reading but shows only a preview (summary,
-  traits, 2 sections); paying unlocks the rest of that same reading.
-- **Email:** an email box is the main path on the free reading, with a subtle "Continue without email"
-  link. Entering an email means agreeing to follow-up and marketing emails (stated plainly, with the
-  time and wording stored as proof of consent). Every email has an unsubscribe link and a postal address.
-- **Recognizing returning visitors:** email if given, otherwise a long-lived cookie plus a hashed-IP
-  backstop (about 3 free readings per IP, for shared networks).
-- **Paid readings:** paid up front with Stripe and never blocked: they skip the per-visitor limits, the
-  daily cap and the bot check, and can be retried if generation fails. The daily cap applies to free
-  readings only.
-- **Email sending:** Google Workspace (Business Starter). Reading-link emails go out through the Gmail
-  API from a palmreadings.ai address. The subscriber list lives in D1 and is exported to Google Sheets
-  for campaigns; upgrading to Business Standard adds Gmail multi-send for newsletters.
+- **Free reading** (solo only, one per person): only the preview is written: headline, summary,
+  "Your life at a glance" (each answer with a one-sentence summary), and "Explore your hands" (a note
+  on each hand and one sentence per visible line). The rest of the reading is written only after
+  payment, so a free preview holds nothing locked away. Free readings get the bot check, the per-visitor
+  rate limits and the daily cap.
+- **One per person**: recognized by email if given, else a long-lived cookie (`pr_vid`), with the IP
+  address as a backstop (`FREE_READINGS_PER_IP`, default 3 a year). All stored hashed in `free_claims`
+  and deleted after a year. Skipped on localhost unless `ENFORCE_LIMITS_LOCALLY=true`.
+- **Unlock** ($4.99): the unlock card on a preview starts a Stripe Checkout; on return
+  (`/r/<id>/?checkout=...`) the payment is confirmed with Stripe and the paid part is written from the
+  stored observations (`POST /api/readings/:id/unlock`). The Stripe webhook also records payments, so a
+  buyer who closes the tab still gets the full reading next time they open the link. A refresh mid-way
+  waits for the write in progress instead of starting a second one.
+- **Paid up front**: couples readings ($7.99) always, and solo readings once the free one is used. The
+  paywall comes right after choosing the reading type; after checkout the visitor adds details and
+  photos, and the whole reading is written with no bot check or limits. Each payment makes one reading.
+- **Email**: before a free reading, an email box is the main path ("Email me my reading"), with a quieter
+  "Continue without email". Entering an email means agreeing to marketing emails; the wording
+  (`EMAIL_CONSENT_TEXT` in `shared/business.ts`) and time are stored in `subscribers`. Emails go out
+  through the Google Apps Script with an unsubscribe link (`/api/unsubscribe`) and the postal address.
+  The "Subscribers" tab of the Google Sheet mirrors the list for campaigns. Buyers get their link at the
+  email used at checkout (transactional).
+- **Prices**: `PRICE_SOLO_CENTS` / `PRICE_COUPLE_CENTS` (defaults 499 / 799). Promotion codes created in
+  Stripe work at checkout.
+- **Testing locally**: without `STRIPE_SECRET_KEY`, checkout is simulated on localhost (the paywall says
+  "Test mode"), so the whole flow can be tried with the mock AI. Add `ENFORCE_LIMITS_LOCALLY=true` to
+  `.dev.vars` to see the paywall after one free reading.
 
 ## Before launch
 
 - **Legal review** of the Privacy Policy, Terms of Use and Refund Policy (drafts written Nov 2026 to
   match how the site handles data, payments and refunds).
-- Payments (Stripe) and the limited free reading.

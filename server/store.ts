@@ -1,4 +1,4 @@
-import type { PersonObservation, Reading, ReadingRequest, SavedReadingData, SlotId } from '../shared/types';
+import type { PersonObservation, Reading, ReadingRequest, ReadingTier, SavedReadingData, SlotId } from '../shared/types';
 import type { Env } from './env';
 
 export function newReadingId(): string {
@@ -30,6 +30,7 @@ export async function saveReading(
   reading: Reading,
   observations: PersonObservation[],
   provider: string,
+  payment: { tier: ReadingTier; amountCents: number | null },
 ): Promise<string> {
   const id = newReadingId();
   await Promise.all(
@@ -52,12 +53,14 @@ export async function saveReading(
     photoSlots: req.photos.map((p) => p.slot),
     photosDeletedAt: null,
     marketingConsent: !!req.marketingConsent,
+    tier: payment.tier,
+    paidAt: payment.amountCents !== null ? new Date().toISOString() : null,
   };
 
   await env.DB.prepare(
     `INSERT INTO readings (id, created_at, last_viewed_at, mode, focus, include_family, provider, age_band, dominant_hand, element,
-       marriages, children, curious, marketing_consent, marketing_consent_at, data)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       marriages, children, curious, marketing_consent, marketing_consent_at, tier, paid_at, amount_cents, data)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
@@ -75,6 +78,9 @@ export async function saveReading(
       reading.curious ?? null,
       data.marketingConsent ? 1 : 0,
       data.marketingConsent ? data.createdAt : null,
+      data.tier,
+      data.paidAt,
+      payment.amountCents,
       JSON.stringify(data),
     )
     .run();
@@ -82,13 +88,48 @@ export async function saveReading(
 }
 
 export async function getReading(env: Env, id: string): Promise<SavedReadingData | null> {
-  const row = await env.DB.prepare('SELECT data, photos_deleted_at, marketing_consent FROM readings WHERE id = ?')
+  const row = await env.DB.prepare('SELECT data, photos_deleted_at, marketing_consent, tier, paid_at FROM readings WHERE id = ?')
     .bind(id)
-    .first<{ data: string; photos_deleted_at: string | null; marketing_consent: number }>();
+    .first<{ data: string; photos_deleted_at: string | null; marketing_consent: number; tier: string; paid_at: string | null }>();
   if (!row) return null;
   await env.DB.prepare('UPDATE readings SET last_viewed_at = ? WHERE id = ?').bind(new Date().toISOString(), id).run();
   const data = JSON.parse(row.data) as SavedReadingData;
-  return { ...data, photosDeletedAt: row.photos_deleted_at, marketingConsent: row.marketing_consent === 1 };
+  return {
+    ...data,
+    photosDeletedAt: row.photos_deleted_at,
+    marketingConsent: row.marketing_consent === 1,
+    tier: row.tier === 'preview' ? 'preview' : 'full',
+    paidAt: row.paid_at,
+  };
+}
+
+/**
+ * Claims the right to write the paid part. Returns false if another request started it in the last
+ * three minutes (a refresh mid-way), so it isn't written twice.
+ */
+export async function startWritingFull(env: Env, id: string, now = new Date()): Promise<boolean> {
+  const stale = new Date(now.getTime() - 3 * 60_000).toISOString();
+  const res = await env.DB.prepare(
+    "UPDATE readings SET writing_at = ? WHERE id = ? AND tier = 'preview' AND paid_at IS NOT NULL AND (writing_at IS NULL OR writing_at < ?)",
+  )
+    .bind(now.toISOString(), id, stale)
+    .run();
+  return (res.meta.changes ?? 0) > 0;
+}
+
+/** Stores the complete reading once the paid part is written. */
+export async function saveFullReading(env: Env, id: string, reading: Reading): Promise<void> {
+  const row = await env.DB.prepare('SELECT data FROM readings WHERE id = ?').bind(id).first<{ data: string }>();
+  if (!row) return;
+  const data = JSON.parse(row.data) as SavedReadingData;
+  data.reading = reading;
+  data.tier = 'full';
+  await env.DB.prepare("UPDATE readings SET data = ?, tier = 'full', writing_at = NULL WHERE id = ?").bind(JSON.stringify(data), id).run();
+}
+
+/** Lets a failed write be retried right away. */
+export async function clearWriting(env: Env, id: string): Promise<void> {
+  await env.DB.prepare('UPDATE readings SET writing_at = NULL WHERE id = ?').bind(id).run();
 }
 
 export async function getPhoto(env: Env, id: string, slot: SlotId): Promise<R2ObjectBody | null> {

@@ -20,6 +20,15 @@ export interface Env {
    */
   GOOGLE_SCRIPT_URL?: string;
   GOOGLE_SCRIPT_SECRET?: string;
+  /** Stripe secret key (sk_test_... or sk_live_...). Unset on localhost: checkout is simulated. */
+  STRIPE_SECRET_KEY?: string;
+  /** Signing secret of the Stripe webhook endpoint (whsec_...). */
+  STRIPE_WEBHOOK_SECRET?: string;
+  /** Prices in US cents. Defaults: 499 solo, 799 couples. */
+  PRICE_SOLO_CENTS?: string;
+  PRICE_COUPLE_CENTS?: string;
+  /** Free readings allowed per IP address per year, a backstop for shared networks. Default 3. */
+  FREE_READINGS_PER_IP?: string;
   AI_PROVIDER?: string;
   OBSERVE_MODEL?: string;
   INTERPRET_MODEL?: string;

@@ -22,6 +22,14 @@ GEMINI_API_KEY=
 # GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/.../exec
 # GOOGLE_SCRIPT_SECRET=the same long random string as the script's SECRET property
 
+# Payments. Without a Stripe key, checkout is simulated on localhost ("Test mode").
+# STRIPE_SECRET_KEY=sk_test_...
+# STRIPE_WEBHOOK_SECRET=whsec_...
+# PRICE_SOLO_CENTS=499
+# PRICE_COUPLE_CENTS=799
+# Free readings are unlimited locally; set this to test the one-free-reading rule and the paywall:
+# ENFORCE_LIMITS_LOCALLY=true
+
 # Bot protection (Cloudflare Turnstile). Leave unset to skip the check locally.
 # Cloudflare's always-pass test secret, to try the full flow:
 # TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA

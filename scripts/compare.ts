@@ -178,6 +178,7 @@ async function runOne(person: Person, provider: string): Promise<Result> {
         if (e.type === 'reading') result.reading = e.reading;
       },
       async () => 'local',
+      { full: true },
     );
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e);
@@ -246,7 +247,7 @@ function readingHtml(label: string, r: Result): string {
     ${rd.timeline?.length ? `<details open><summary>Timeline</summary><ol>${rd.timeline.map((t) => `<li><b>${esc(t.when)}</b> – ${esc(t.title)}: ${esc(t.detail)} <small>(${t.timing})</small></li>`).join('')}</ol></details>` : ''}
     ${rd.hand_notes?.length ? `<details><summary>Each hand on its own</summary><ul>${rd.hand_notes.map((n) => `<li><b>${n.hand}</b>: ${esc(n.summary)}</li>`).join('')}</ul></details>` : ''}
     <details><summary>What it saw in the photos</summary><ul class="obs">${hands}</ul></details>
-    ${rd.sections
+    ${(rd.sections ?? [])
       .map(
         (s) =>
           `<section><h5>${esc(s.title)}${s.name ? `: <i>${esc(s.name)}</i>` : ''}</h5>${
@@ -258,12 +259,12 @@ function readingHtml(label: string, r: Result): string {
       .join('')}
     ${
       rd.family
-        ? `<section><h5>Marriage & Family</h5><p>Marriages: <b>${esc(rd.family.marriages.range)}</b> (${rd.family.marriages.confidence}) – ${esc(rd.family.marriages.explanation)}</p>
-           <p>Children: <b>${esc(rd.family.children.range)}</b> (${rd.family.children.confidence}) – ${esc(rd.family.children.explanation)}</p><p>${esc(rd.family.timing)}</p></section>`
+        ? `<section><h5>Marriage & Family</h5><p>Marriages: <b>${esc(rd.family.marriages.range)}</b> (${rd.family.marriages.confidence}) – ${esc(rd.family.marriages.explanation ?? rd.family.marriages.summary ?? '')}</p>
+           <p>Children: <b>${esc(rd.family.children.range)}</b> (${rd.family.children.confidence}) – ${esc(rd.family.children.explanation ?? rd.family.children.summary ?? '')}</p><p>${esc(rd.family.timing ?? '')}</p></section>`
         : ''
     }
-    <section><h5>Action steps</h5><ol>${rd.action_steps.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></section>
-    <p class="closing">“${esc(rd.closing.text)}”</p>
+    <section><h5>Action steps</h5><ol>${(rd.action_steps ?? []).map((a) => `<li>${esc(a)}</li>`).join('')}</ol></section>
+    <p class="closing">“${esc(rd.closing?.text ?? '')}”</p>
   </div>`;
 }
 
