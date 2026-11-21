@@ -1,58 +1,104 @@
 ---
-import Page from '../layouts/Page.astro';
+import Base from '../layouts/Base.astro';
 import { CONTACT_EMAIL, TURNSTILE_SITE_KEY } from '../site';
 
+const label = 'flex flex-col gap-2 text-base font-medium text-[#e4dcfa]';
 const field =
-  'w-full rounded-xl border border-white/10 bg-night-900/70 px-4 py-3 text-white placeholder:text-violet-300/40 focus:border-gold-400 focus:outline-none';
+  'field w-full rounded-input border border-lavender-300/20 bg-night-950/60 px-[18px] py-3.5 text-[17px] font-normal text-white placeholder:text-ink-faint';
+const helpCard = 'flex gap-[18px] rounded-card border border-lavender-300/[0.14] bg-[rgba(20,16,44,0.65)] p-5 sm:p-6';
+const helpIcon = 'flex size-12 flex-none items-center justify-center rounded-full border border-gold-400/40 text-gold-400';
 ---
 
-<Page
+<Base
   title="Contact | Palm Readings AI"
-  heading="Contact"
   description="Questions, feedback, or concerns about Palm Readings AI? Send us a message."
 >
-  <p class="prose-page mb-10 text-center">
-    We greatly appreciate our users sharing any feedback, questions, or concerns about Palm Readings AI. We take these
-    messages to heart and aim to improve constantly.
-  </p>
+  <section class="starfield relative overflow-hidden bg-night-950 text-[17px] leading-[1.6]">
+    <div
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_70%_at_20%_10%,rgba(110,52,200,0.35),transparent_70%),radial-gradient(40%_60%_at_90%_80%,rgba(246,199,127,0.07),transparent_70%)]"
+      aria-hidden="true"
+    ></div>
+    <div class="relative mx-auto flex max-w-[1200px] flex-wrap gap-12 px-4 pb-[72px] pt-16 sm:px-8 md:gap-14 md:pb-[120px] md:pt-24">
+      <div class="min-w-0 flex-[1_1_380px]">
+        <p class="eyebrow">Contact</p>
+        <h1 class="mt-4 font-display text-[clamp(40px,4.6vw,62px)] font-medium leading-[1.08] text-white">
+          Send us a <em class="accent">message</em>
+        </h1>
+        <p class="mt-6 max-w-[440px] text-lg text-ink-soft sm:text-[19px]">
+          We greatly appreciate any feedback, questions, or concerns about Palm Readings AI. We take these messages to heart
+          and aim to improve constantly.
+        </p>
 
-  <div class="grid gap-6 md:grid-cols-[3fr_2fr]">
-    <form id="contact-form" class="panel space-y-4 p-6 sm:p-8" novalidate>
-      <h2 class="font-display text-xl text-white">General Inquiries</h2>
-      <label class="block">
-        <span class="mb-1.5 block text-sm font-bold text-violet-100">Name</span>
-        <input name="name" required maxlength="100" autocomplete="name" class={field} />
-      </label>
-      <label class="block">
-        <span class="mb-1.5 block text-sm font-bold text-violet-100">Email</span>
-        <input name="email" type="email" required maxlength="200" autocomplete="email" class={field} />
-      </label>
-      <label class="block">
-        <span class="mb-1.5 block text-sm font-bold text-violet-100">Subject</span>
-        <input name="subject" maxlength="150" class={field} />
-      </label>
-      <label class="block">
-        <span class="mb-1.5 block text-sm font-bold text-violet-100">Message</span>
-        <textarea name="message" required maxlength="5000" rows="6" class={field}></textarea>
-      </label>
-      <!-- Honeypot for bots; hidden from people and screen readers. -->
-      <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] h-0 w-0 opacity-0" />
-      {TURNSTILE_SITE_KEY && <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="dark" data-appearance="interaction-only"></div>}
-      <button type="submit" class="w-full rounded-[10px] bg-gold-400 px-6 py-3 font-bold text-plum-900 transition hover:bg-gold-500 disabled:opacity-60">
-        Send message
-      </button>
-      <p id="contact-status" role="status" class="text-center text-sm"></p>
-    </form>
+        <div class="mt-10 flex max-w-[440px] flex-col gap-4">
+          <div class={helpCard}>
+            <span class={helpIcon}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 6L2 7" /></svg>
+            </span>
+            <div class="min-w-0">
+              <p class="font-medium text-white">Prefer email?</p>
+              <a href={`mailto:${CONTACT_EMAIL}`} class="break-words text-lg text-gold-400 underline-offset-4 hover:text-gold-300 hover:underline">{CONTACT_EMAIL}</a>
+            </div>
+          </div>
+          <div class={helpCard}>
+            <span class={helpIcon}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+            </span>
+            <div class="min-w-0">
+              <p class="font-medium text-white">Need a reading deleted?</p>
+              <p class="mt-1 text-base text-ink-subtle">
+                Open your private link and choose “Delete this reading and its photos.” Lost your link? Write to us with the
+                date and reading type and we’ll find and delete it.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <aside class="panel h-fit p-6 sm:p-8">
-      <h2 class="font-display text-xl text-white">Other Contact & Feedback</h2>
-      <p class="mt-3 text-violet-200/90">Prefer email? Reach us directly at:</p>
-      <a href={`mailto:${CONTACT_EMAIL}`} class="mt-2 inline-block font-bold text-gold-400 underline">{CONTACT_EMAIL}</a>
-    </aside>
-  </div>
-</Page>
+      <form id="contact-form" class="panel-raised flex min-w-0 flex-[1_1_460px] flex-col gap-5 p-6 sm:p-10" novalidate>
+        <h2 class="font-display text-[26px] font-medium leading-tight text-white">General inquiries</h2>
+        <div class="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))]">
+          <label class={label}>
+            Name
+            <input name="name" required maxlength="100" autocomplete="name" placeholder="Your name" class={field} />
+          </label>
+          <label class={label}>
+            Email
+            <input name="email" type="email" required maxlength="200" autocomplete="email" placeholder="you@example.com" class={field} />
+          </label>
+        </div>
+        <label class={label}>
+          Subject
+          <input name="subject" maxlength="150" placeholder="What’s this about?" class={field} />
+        </label>
+        <label class={label}>
+          Message
+          <textarea name="message" required maxlength="5000" rows="7" placeholder="Share your question, feedback, or concern" class:list={[field, 'resize-y']}></textarea>
+        </label>
+        <!-- Honeypot for bots; hidden from people and screen readers. -->
+        <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] h-0 w-0 opacity-0" />
+        {TURNSTILE_SITE_KEY && <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="dark" data-appearance="interaction-only"></div>}
+        <div class="mt-1">
+          <button type="submit" class="btn-gold w-full px-6 py-[14px] text-lg">Send message</button>
+          <p id="contact-status" role="status" class="text-center text-sm"></p>
+          <p class="mt-5 text-center text-xs text-ink-subtle">
+            We usually reply by email. See our <a href="/privacy-policy/" class="text-gold-400 underline underline-offset-2 hover:text-gold-300">Privacy Policy</a> for how we handle messages.
+          </p>
+        </div>
+      </form>
+    </div>
+  </section>
+</Base>
 
 {TURNSTILE_SITE_KEY && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+
+<style>
+  .field:focus,
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--color-gold-400);
+    box-shadow: var(--focus-ring);
+  }
+</style>
 
 <script>
   const form = document.getElementById('contact-form') as HTMLFormElement;
@@ -63,7 +109,7 @@ const field =
     const button = form.querySelector('button')!;
     button.disabled = true;
     status.textContent = 'Sending…';
-    status.className = 'text-center text-sm text-violet-200';
+    status.className = 'mt-4 text-center text-sm text-ink-muted';
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -73,10 +119,10 @@ const field =
       if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || 'Something went wrong.');
       form.reset();
       status.textContent = 'Thank you! Your message has been sent.';
-      status.className = 'text-center text-sm font-bold text-gold-400';
+      status.className = 'mt-4 text-center text-sm font-semibold text-gold-300';
     } catch (err) {
       status.textContent = err instanceof Error ? err.message : 'Something went wrong.';
-      status.className = 'text-center text-sm font-bold text-red-300';
+      status.className = 'mt-4 text-center text-sm font-semibold text-[#ffb3c1]';
     } finally {
       button.disabled = false;
       // Turnstile tokens are single-use.
