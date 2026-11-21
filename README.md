@@ -10,8 +10,12 @@ The whole palmreadings.ai site (marketing pages and the reading app) on Cloudfla
   are kept as-is.
 - **Server code** for readings lives in `server/`; types shared with the app are in `shared/`.
 
-Brand: colors and gradients from the WordPress theme (`src/styles/global.css`), Cinzel headings,
-Comfortaa UI text, Nunito Sans for long reading text.
+Design: "celestial modern" redesign (Nov 2026). Tokens (colors, palm line colors, radii, shadows) are in
+`src/styles/global.css`; shared classes `.btn-gold`, `.btn-ghost`, `.panel`, `.panel-raised`, `.starfield`,
+`.hero-glow`, `.accent` (italic gold Cormorant word in a heading) and `.eyebrow`. Fonts: Cinzel (headings),
+Cormorant Garamond italic (accents), Outfit (everything else). Rules: nothing smaller than 14px (`text-xs` is
+14px), no em dashes in copy, the same color for each palm line everywhere. Legal pages share
+`src/layouts/Legal.astro`; everything else uses `src/layouts/Base.astro` (header and footer).
 
 ## How a reading works
 
