@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import { CONTACT_EMAIL, GA_ID, IMAGES } from '../site';
 import { pageGraph, SHARE_IMAGE, SITE_NAME, type PageType } from '../seo';
+import { CONSENT_REGIONS } from '../../shared/consent';
 
 interface Props {
   /** Under 60 characters, ending in "| Palm Readings AI". */
@@ -69,14 +70,24 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
     <link rel="apple-touch-icon" href={IMAGES.appleTouchIcon} />
     <link rel="manifest" href="/site.webmanifest" />
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
-    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
-    <script is:inline define:vars={{ GA_ID }}>
+    <script is:inline define:vars={{ GA_ID, CONSENT_REGIONS }}>
+      // Google Analytics with Consent Mode. Ads features are always off. Visitors from the EU/EEA, UK and
+      // Switzerland get no analytics cookies until they accept (the banner below); everyone else gets them
+      // unless their browser sends a Global Privacy Control signal. A choice made in the banner wins.
       window.dataLayer = window.dataLayer || [];
       function gtag() { dataLayer.push(arguments); }
       window.gtag = gtag;
+      var choice = null;
+      try { choice = localStorage.getItem('pr_consent'); } catch (e) {}
+      var gpc = navigator.globalPrivacyControl === true;
+      var denied = { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' };
+      gtag('consent', 'default', Object.assign({}, denied, { analytics_storage: 'denied', region: CONSENT_REGIONS, wait_for_update: 500 }));
+      gtag('consent', 'default', Object.assign({}, denied, { analytics_storage: gpc ? 'denied' : 'granted' }));
+      if (choice) gtag('consent', 'update', { analytics_storage: choice });
       gtag('js', new Date());
-      gtag('config', GA_ID);
+      gtag('config', GA_ID, { allow_google_signals: false, allow_ad_personalization_signals: false });
     </script>
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
   </head>
   <body class="flex min-h-screen flex-col">
     <header class="relative z-30 border-b border-white/[0.08] bg-[linear-gradient(180deg,rgba(28,14,58,0.92),rgba(10,8,24,0.88))] print:hidden">
@@ -157,8 +168,55 @@ const sparkle = 'M11 3l1.6 5.4L18 10l-5.4 1.6L11 17l-1.6-5.4L4 10l5.4-1.6z';
           reflective purposes only. Interpretations are not guaranteed to be accurate and should not be considered professional,
           medical, legal, or financial advice. Individual experiences may vary.
         </p>
-        <p class="mt-[18px] text-sm text-ink-faint">© {year} Palm Readings AI. All rights reserved.</p>
+        <p class="mt-[18px] flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-faint">
+          <span>© {year} Palm Readings AI. All rights reserved.</span>
+          <button type="button" data-cookie-settings class="min-h-11 underline underline-offset-4 hover:text-white">Cookie settings</button>
+        </p>
       </div>
     </footer>
+
+    <!-- Cookie choices: shown automatically only to visitors from consent regions (the Worker marks the page
+         with data-consent="required"), and to anyone who clicks "Cookie settings". -->
+    <div
+      id="cookie-banner"
+      role="dialog"
+      aria-labelledby="cookie-title"
+      aria-describedby="cookie-text"
+      hidden
+      class="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-[560px] rounded-card border border-gold-400/35 bg-[rgba(14,10,34,0.97)] p-5 shadow-2xl shadow-black/60 backdrop-blur-md sm:bottom-5 sm:p-6 print:hidden"
+    >
+      <p id="cookie-title" class="font-display text-lg text-white">Cookies, your choice</p>
+      <p id="cookie-text" class="mt-2 text-base leading-relaxed text-ink-soft">
+        We'd like to use Google Analytics cookies to understand how people use the site. No ads, and nothing that follows you
+        around the web. See our <a href="/privacy-policy/#analytics-and-cookies" class="text-gold-400 underline underline-offset-4">Privacy Policy</a>.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button type="button" data-consent-choice="granted" class="btn-gold px-6 py-2.5 text-base">Accept analytics</button>
+        <button type="button" data-consent-choice="denied" class="btn-ghost px-6 py-2.5 text-base">Decline</button>
+      </div>
+    </div>
+    <script is:inline>
+      (function () {
+        var banner = document.getElementById('cookie-banner');
+        var stored = null;
+        try { stored = localStorage.getItem('pr_consent'); } catch (e) {}
+        var required = document.documentElement.getAttribute('data-consent') === 'required';
+        if (required && !stored) banner.hidden = false;
+        document.querySelectorAll('[data-consent-choice]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var choice = b.getAttribute('data-consent-choice');
+            try { localStorage.setItem('pr_consent', choice); } catch (e) {}
+            if (window.gtag) window.gtag('consent', 'update', { analytics_storage: choice });
+            banner.hidden = true;
+          });
+        });
+        document.querySelectorAll('[data-cookie-settings]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            banner.hidden = false;
+            banner.querySelector('[data-consent-choice]').focus();
+          });
+        });
+      })();
+    </script>
   </body>
 </html>
