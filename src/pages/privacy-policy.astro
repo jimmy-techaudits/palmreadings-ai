@@ -1,28 +1,30 @@
 ---
-import Page from '../layouts/Page.astro';
+import Legal from '../layouts/Legal.astro';
 import { CONTACT_EMAIL } from '../site';
 ---
 
 <!-- Draft revised November 2026 to match how the site works. Have it reviewed by a legal advisor before relying on it. -->
-<Page
+<Legal
   title="Privacy Policy | Palm Readings AI"
-  heading="Privacy Policy"
   description="How Palm Readings AI collects, uses, and protects your information, including the hand photos you upload."
-  eyebrow="Last Updated and Effective as of November 10, 2026"
+  eyebrow="Privacy Policy"
+  updated="November 10, 2026"
 >
-  <div class="prose-page">
-    <h2>Who We Are</h2>
-    <p>
-      Palm Readings AI ("Palm Readings," "we," "us," or "our") operates the Palm Readings AI website (palmreadings.ai) and
-      related digital services (the "site" or "services"). Our goal is to provide a private, reflective, and accessible
-      experience for individuals seeking insight, self-awareness, and perspective through digital palm readings.
-    </p>
-    <p>
-      This Privacy Policy explains what information we collect, how we use it, who we share it with, and the choices you
-      have. By using the site, you agree to the practices described here.
-    </p>
+  <Fragment slot="heading">Your palms, <em class="accent">your privacy</em></Fragment>
 
-    <h2>The Short Version</h2>
+  <h2 id="who-we-are">Who We Are</h2>
+  <p>
+    Palm Readings AI ("Palm Readings," "we," "us," or "our") operates the Palm Readings AI website (palmreadings.ai) and
+    related digital services (the "site" or "services"). Our goal is to provide a private, reflective, and accessible
+    experience for individuals seeking insight, self-awareness, and perspective through digital palm readings.
+  </p>
+  <p>
+    This Privacy Policy explains what information we collect, how we use it, who we share it with, and the choices you
+    have. By using the site, you agree to the practices described here.
+  </p>
+
+  <div class="legal-summary">
+    <h2 id="the-short-version">The Short Version</h2>
     <ul>
       <li>Your hand photos are analyzed by our AI service provider to create your reading.</li>
       <li><strong>Your reading and photos are saved at a private link</strong> so you can return to them anytime. There are no accounts; anyone with the link can view it, so keep it private.</li>
@@ -33,192 +35,192 @@ import { CONTACT_EMAIL } from '../site';
       <li>We use your palm photos in marketing only if you choose to give us permission, and you can withdraw it anytime.</li>
       <li>We do not sell, rent, or trade your personal information.</li>
     </ul>
-
-    <h2>Information We Collect</h2>
-    <p><strong>When you request a reading</strong>, we collect:</p>
-    <ul>
-      <li>Photos of your hands (and, for couples readings, of your partner’s hands)</li>
-      <li>Which hand you write with, and the type of reading you choose</li>
-      <li>Optional details you choose to give: first name, age, and pronouns</li>
-      <li>Whether you choose to include marriage and children predictions</li>
-    </ul>
-    <p><strong>When you contact us</strong>, we collect your name, email address, and anything you include in your message.</p>
-    <p><strong>When you give feedback</strong> on a reading, we collect your rating, any comment you write, and the type of reading it was about.</p>
-    <p>
-      <strong>Automatically</strong>, as with most websites, we and our service providers receive technical information such
-      as your IP address, browser type, device type, operating system, referring pages, access times, and how you interact
-      with the site.
-    </p>
-
-    <h2>How Your Hand Photos Are Handled</h2>
-    <p>
-      Your photos are resized on your own device, then sent securely to our servers and to our AI service provider, which
-      analyzes the visible features of your hands (such as hand shape, lines, and mounts) to create your reading. Your
-      optional name, age, and pronouns are included so the reading can address you personally.
-    </p>
-    <ul>
-      <li>Your photos are stored with your reading so you can see which photos your reading was based on, and are automatically deleted three years after the reading was last opened.</li>
-      <li>We do not use your photos to recognize or identify you, and we do not extract or keep hand geometry, palm prints, or any other biometric identifier.</li>
-      <li>We do not sell your photos, and we use them in marketing only with your separate, optional permission (see below).</li>
-      <li>We use our AI providers’ business API services and do not opt in to any program that lets them use your photos to train their models. Our AI provider may briefly retain requests under its own policies (for example, to detect abuse) before deleting them.</li>
-    </ul>
-    <p>
-      Because hand images can be considered sensitive or biometric information in some places, we ask for your consent
-      before any photo is uploaded. If you upload photos of another person, such as a partner, you must have their
-      permission to do so.
-    </p>
-
-    <h2>Your Private Reading Link</h2>
-    <p>
-      When your reading is ready, it is saved at a private web address made of a long, random code. We don’t use accounts,
-      so <strong>anyone who has the link can view your reading and its photos, and can delete it</strong>. Keep the link
-      private and share it only with people you trust. Private reading pages are not listed anywhere and are marked so
-      that search engines do not index them.
-    </p>
-
-    <h2>How We Use Your Information</h2>
-    <ul>
-      <li>To create and deliver the readings you request</li>
-      <li>To respond to your messages and support requests</li>
-      <li>To store your reading and photos so you can return to them at your private link</li>
-      <li>To understand how the site is used and improve our readings, content, and features</li>
-      <li>To create anonymized, aggregated statistics, described below</li>
-      <li>To keep the site secure and prevent abuse</li>
-      <li>To comply with legal obligations</li>
-    </ul>
-
-    <h2>Sharing Information with Service Providers</h2>
-    <p>We share information only with service providers that help us run the site, and only as needed for them to do so:</p>
-    <ul>
-      <li><strong>AI service providers</strong>, which analyze your photos and write your reading</li>
-      <li><strong>Cloudflare</strong>, which hosts the site and protects it from attacks</li>
-      <li><strong>Google</strong>, for analytics (Google Analytics) and for our email and records of feedback and contact messages (Google Workspace)</li>
-      <li><strong>Email delivery services</strong>, which deliver contact form messages to us</li>
-      <li><strong>Payment processors</strong>, if you purchase a paid reading. Payments are handled directly by the processor; we do not see or store your full card number.</li>
-    </ul>
-    <p>
-      We may also disclose information if required by law, or if we believe in good faith that it is necessary to comply
-      with legal obligations, protect our rights or property, or ensure user safety.
-    </p>
-
-    <h2>Usage Data and Feedback</h2>
-    <p>
-      We record usage information, such as which reading type was chosen and how many photos were included, to understand
-      how the service is used. Feedback you choose to submit (your rating and comment) is saved with your reading and used
-      to improve our readings.
-    </p>
-
-    <h2>Anonymized Statistics and Marketing</h2>
-    <p>
-      We combine information from many readings into anonymized, aggregated statistics, for example the most common hand
-      elements, how often certain lines appear, or the typical range of marriage and children lines among our readers, grouped
-      by broad age bands. We may use these statistics to improve the service and in our marketing, such as on social media or
-      in articles.
-    </p>
-    <p>
-      These statistics never include your name, your photos, your private link, or anything that could reasonably identify
-      you. We will not quote your individual reading in marketing without asking your permission first.
-    </p>
-
-    <h2>Palm Photos in Marketing (Optional)</h2>
-    <p>
-      When you request a reading, you can choose to give us permission to use your palm photos in our marketing, such as
-      on our website, social media, or ads. This is optional, off unless you tick the box, and has no effect on your
-      reading. If you give permission:
-    </p>
-    <ul>
-      <li>We will never publish your photos with your name, your private link, or your reading’s personal details.</li>
-      <li>We may crop or edit your photos (for example, to adjust lighting or remove backgrounds).</li>
-      <li>You can withdraw permission anytime from your private link or by emailing us. We will stop using your photos in new marketing, though materials already published or printed may remain in circulation.</li>
-      <li>For couples readings, you confirm that your partner has also agreed.</li>
-    </ul>
-
-    <h2>Analytics and Cookies</h2>
-    <p>
-      We use Google Analytics to understand how visitors use the site. Google Analytics uses cookies and similar
-      technologies and may collect information such as your IP address, browser and device type, referring pages, and
-      on-site behavior, which we see only in aggregate. You can learn more in
-      <a href="https://policies.google.com/technologies/partner-sites">how Google uses information from sites that use its services</a>,
-      and you can opt out with the <a href="https://tools.google.com/dlpage/gaoptout">Google Analytics opt-out browser add-on</a>.
-    </p>
-    <p>
-      The reading app may also use your browser’s session storage while a reading is in progress. You can block or delete
-      cookies and site data in your browser settings.
-    </p>
-
-    <h2>How Long We Keep Information</h2>
-    <ul>
-      <li><strong>Readings:</strong> kept until you delete them or ask us to, so your private link keeps working</li>
-      <li><strong>Photos:</strong> deleted automatically three years after your reading was last opened, or sooner if you delete your reading. Opening your private link restarts the three years.</li>
-      <li><strong>Photos you allowed us to use in marketing:</strong> may be kept in our marketing materials until you withdraw permission</li>
-      <li><strong>Anonymized statistics:</strong> kept indefinitely, because they cannot be linked back to you</li>
-      <li><strong>Contact messages:</strong> kept as long as needed to respond and improve the service</li>
-      <li><strong>Security and server logs:</strong> kept for a limited period by our hosting provider</li>
-    </ul>
-    <p>We may also delete readings that violate our Terms, or as required by law.</p>
-
-    <h2>Security of Your Information</h2>
-    <p>
-      To protect the site from bots and abuse, our forms use Cloudflare Turnstile, which checks your browser and connection
-      (usually without you seeing anything) under <a href="https://www.cloudflare.com/turnstile-privacy-policy/">Cloudflare’s
-      privacy policy</a>. We also count how many requests come from each visitor to prevent misuse. These counts store only a
-      scrambled (hashed) form of your IP address and are deleted after two days.
-    </p>
-    <p>
-      We use encrypted connections (HTTPS) and take reasonable measures to protect your information from unauthorized
-      access, use, or disclosure. However, no method of transmission over the internet or electronic storage is completely
-      secure, and we cannot guarantee absolute security.
-    </p>
-
-    <h2>Your Choices and Rights</h2>
-    <p>You can always use the site without giving your name, age, or pronouns.</p>
-    <p>
-      <strong>To delete a reading</strong>, open your private link and choose “Delete this reading and its photos.” This
-      permanently erases the reading and its photos. If you have lost your link or prefer email, contact us at the address
-      below with as much detail as you can (for example, the date and reading type) and we will find and delete it.
-    </p>
-    <p>You may also contact us at any time to:</p>
-    <ul>
-      <li>Ask what information we hold about you</li>
-      <li>Request corrections or deletion of your information</li>
-      <li>Opt out of non-essential emails</li>
-      <li>Ask questions or raise concerns about our data practices</li>
-    </ul>
-    <p>
-      Depending on where you live, you may have additional rights under local law, such as the right to access, correct,
-      delete, or obtain a copy of your personal information. We will respond to requests as required by applicable law and
-      will not discriminate against you for making one.
-    </p>
-
-    <h2>Age Requirement</h2>
-    <p>
-      Palm Readings AI is intended for adults. You must be 18 or older (or the age of majority where you live) to use the
-      reading service. We do not knowingly collect information from children. If you believe a child has provided us with
-      information, please contact us and we will delete it.
-    </p>
-
-    <h2>Links to Other Websites</h2>
-    <p>
-      Our site may contain links to external websites. We are not responsible for the content or privacy practices of those
-      sites and encourage you to review their privacy policies.
-    </p>
-
-    <h2>Email Communications</h2>
-    <p>
-      If you contact us, we will reply by email. If we offer email updates, we will only send them if you sign up, and you
-      can unsubscribe at any time.
-    </p>
-
-    <h2>Changes to This Privacy Policy</h2>
-    <p>
-      We may update this Privacy Policy from time to time. Changes will be posted on this page with a new "Last Updated"
-      date. Continued use of the site after an update means you accept the revised policy.
-    </p>
-
-    <h2>Contact Information</h2>
-    <p>
-      If you have questions or concerns about this Privacy Policy or our data practices, please contact us through our
-      <a href="/contact/">contact form</a> or by email at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
-    </p>
   </div>
-</Page>
+
+  <h2 id="information-we-collect">Information We Collect</h2>
+  <p><strong>When you request a reading</strong>, we collect:</p>
+  <ul>
+    <li>Photos of your hands (and, for couples readings, of your partner’s hands)</li>
+    <li>Which hand you write with, and the type of reading you choose</li>
+    <li>Optional details you choose to give: first name, age, and pronouns</li>
+    <li>Whether you choose to include marriage and children predictions</li>
+  </ul>
+  <p><strong>When you contact us</strong>, we collect your name, email address, and anything you include in your message.</p>
+  <p><strong>When you give feedback</strong> on a reading, we collect your rating, any comment you write, and the type of reading it was about.</p>
+  <p>
+    <strong>Automatically</strong>, as with most websites, we and our service providers receive technical information such
+    as your IP address, browser type, device type, operating system, referring pages, access times, and how you interact
+    with the site.
+  </p>
+
+  <h2 id="how-your-hand-photos-are-handled">How Your Hand Photos Are Handled</h2>
+  <p>
+    Your photos are resized on your own device, then sent securely to our servers and to our AI service provider, which
+    analyzes the visible features of your hands (such as hand shape, lines, and mounts) to create your reading. Your
+    optional name, age, and pronouns are included so the reading can address you personally.
+  </p>
+  <ul>
+    <li>Your photos are stored with your reading so you can see which photos your reading was based on, and are automatically deleted three years after the reading was last opened.</li>
+    <li>We do not use your photos to recognize or identify you, and we do not extract or keep hand geometry, palm prints, or any other biometric identifier.</li>
+    <li>We do not sell your photos, and we use them in marketing only with your separate, optional permission (see below).</li>
+    <li>We use our AI providers’ business API services and do not opt in to any program that lets them use your photos to train their models. Our AI provider may briefly retain requests under its own policies (for example, to detect abuse) before deleting them.</li>
+  </ul>
+  <p>
+    Because hand images can be considered sensitive or biometric information in some places, we ask for your consent
+    before any photo is uploaded. If you upload photos of another person, such as a partner, you must have their
+    permission to do so.
+  </p>
+
+  <h2 id="your-private-reading-link">Your Private Reading Link</h2>
+  <p>
+    When your reading is ready, it is saved at a private web address made of a long, random code. We don’t use accounts,
+    so <strong>anyone who has the link can view your reading and its photos, and can delete it</strong>. Keep the link
+    private and share it only with people you trust. Private reading pages are not listed anywhere and are marked so
+    that search engines do not index them.
+  </p>
+
+  <h2 id="how-we-use-your-information">How We Use Your Information</h2>
+  <ul>
+    <li>To create and deliver the readings you request</li>
+    <li>To respond to your messages and support requests</li>
+    <li>To store your reading and photos so you can return to them at your private link</li>
+    <li>To understand how the site is used and improve our readings, content, and features</li>
+    <li>To create anonymized, aggregated statistics, described below</li>
+    <li>To keep the site secure and prevent abuse</li>
+    <li>To comply with legal obligations</li>
+  </ul>
+
+  <h2 id="sharing-information-with-service-providers">Sharing Information with Service Providers</h2>
+  <p>We share information only with service providers that help us run the site, and only as needed for them to do so:</p>
+  <ul>
+    <li><strong>AI service providers</strong>, which analyze your photos and write your reading</li>
+    <li><strong>Cloudflare</strong>, which hosts the site and protects it from attacks</li>
+    <li><strong>Google</strong>, for analytics (Google Analytics) and for our email and records of feedback and contact messages (Google Workspace)</li>
+    <li><strong>Email delivery services</strong>, which deliver contact form messages to us</li>
+    <li><strong>Payment processors</strong>, if you purchase a paid reading. Payments are handled directly by the processor; we do not see or store your full card number.</li>
+  </ul>
+  <p>
+    We may also disclose information if required by law, or if we believe in good faith that it is necessary to comply
+    with legal obligations, protect our rights or property, or ensure user safety.
+  </p>
+
+  <h2 id="usage-data-and-feedback">Usage Data and Feedback</h2>
+  <p>
+    We record usage information, such as which reading type was chosen and how many photos were included, to understand
+    how the service is used. Feedback you choose to submit (your rating and comment) is saved with your reading and used
+    to improve our readings.
+  </p>
+
+  <h2 id="anonymized-statistics-and-marketing">Anonymized Statistics and Marketing</h2>
+  <p>
+    We combine information from many readings into anonymized, aggregated statistics, for example the most common hand
+    elements, how often certain lines appear, or the typical range of marriage and children lines among our readers, grouped
+    by broad age bands. We may use these statistics to improve the service and in our marketing, such as on social media or
+    in articles.
+  </p>
+  <p>
+    These statistics never include your name, your photos, your private link, or anything that could reasonably identify
+    you. We will not quote your individual reading in marketing without asking your permission first.
+  </p>
+
+  <h2 id="palm-photos-in-marketing-optional">Palm Photos in Marketing (Optional)</h2>
+  <p>
+    When you request a reading, you can choose to give us permission to use your palm photos in our marketing, such as
+    on our website, social media, or ads. This is optional, off unless you tick the box, and has no effect on your
+    reading. If you give permission:
+  </p>
+  <ul>
+    <li>We will never publish your photos with your name, your private link, or your reading’s personal details.</li>
+    <li>We may crop or edit your photos (for example, to adjust lighting or remove backgrounds).</li>
+    <li>You can withdraw permission anytime from your private link or by emailing us. We will stop using your photos in new marketing, though materials already published or printed may remain in circulation.</li>
+    <li>For couples readings, you confirm that your partner has also agreed.</li>
+  </ul>
+
+  <h2 id="analytics-and-cookies">Analytics and Cookies</h2>
+  <p>
+    We use Google Analytics to understand how visitors use the site. Google Analytics uses cookies and similar
+    technologies and may collect information such as your IP address, browser and device type, referring pages, and
+    on-site behavior, which we see only in aggregate. You can learn more in
+    <a href="https://policies.google.com/technologies/partner-sites">how Google uses information from sites that use its services</a>,
+    and you can opt out with the <a href="https://tools.google.com/dlpage/gaoptout">Google Analytics opt-out browser add-on</a>.
+  </p>
+  <p>
+    The reading app may also use your browser’s session storage while a reading is in progress. You can block or delete
+    cookies and site data in your browser settings.
+  </p>
+
+  <h2 id="how-long-we-keep-information">How Long We Keep Information</h2>
+  <ul>
+    <li><strong>Readings:</strong> kept until you delete them or ask us to, so your private link keeps working</li>
+    <li><strong>Photos:</strong> deleted automatically three years after your reading was last opened, or sooner if you delete your reading. Opening your private link restarts the three years.</li>
+    <li><strong>Photos you allowed us to use in marketing:</strong> may be kept in our marketing materials until you withdraw permission</li>
+    <li><strong>Anonymized statistics:</strong> kept indefinitely, because they cannot be linked back to you</li>
+    <li><strong>Contact messages:</strong> kept as long as needed to respond and improve the service</li>
+    <li><strong>Security and server logs:</strong> kept for a limited period by our hosting provider</li>
+  </ul>
+  <p>We may also delete readings that violate our Terms, or as required by law.</p>
+
+  <h2 id="security-of-your-information">Security of Your Information</h2>
+  <p>
+    To protect the site from bots and abuse, our forms use Cloudflare Turnstile, which checks your browser and connection
+    (usually without you seeing anything) under <a href="https://www.cloudflare.com/turnstile-privacy-policy/">Cloudflare’s
+    privacy policy</a>. We also count how many requests come from each visitor to prevent misuse. These counts store only a
+    scrambled (hashed) form of your IP address and are deleted after two days.
+  </p>
+  <p>
+    We use encrypted connections (HTTPS) and take reasonable measures to protect your information from unauthorized
+    access, use, or disclosure. However, no method of transmission over the internet or electronic storage is completely
+    secure, and we cannot guarantee absolute security.
+  </p>
+
+  <h2 id="your-choices-and-rights">Your Choices and Rights</h2>
+  <p>You can always use the site without giving your name, age, or pronouns.</p>
+  <p>
+    <strong>To delete a reading</strong>, open your private link and choose “Delete this reading and its photos.” This
+    permanently erases the reading and its photos. If you have lost your link or prefer email, contact us at the address
+    below with as much detail as you can (for example, the date and reading type) and we will find and delete it.
+  </p>
+  <p>You may also contact us at any time to:</p>
+  <ul>
+    <li>Ask what information we hold about you</li>
+    <li>Request corrections or deletion of your information</li>
+    <li>Opt out of non-essential emails</li>
+    <li>Ask questions or raise concerns about our data practices</li>
+  </ul>
+  <p>
+    Depending on where you live, you may have additional rights under local law, such as the right to access, correct,
+    delete, or obtain a copy of your personal information. We will respond to requests as required by applicable law and
+    will not discriminate against you for making one.
+  </p>
+
+  <h2 id="age-requirement">Age Requirement</h2>
+  <p>
+    Palm Readings AI is intended for adults. You must be 18 or older (or the age of majority where you live) to use the
+    reading service. We do not knowingly collect information from children. If you believe a child has provided us with
+    information, please contact us and we will delete it.
+  </p>
+
+  <h2 id="links-to-other-websites">Links to Other Websites</h2>
+  <p>
+    Our site may contain links to external websites. We are not responsible for the content or privacy practices of those
+    sites and encourage you to review their privacy policies.
+  </p>
+
+  <h2 id="email-communications">Email Communications</h2>
+  <p>
+    If you contact us, we will reply by email. If we offer email updates, we will only send them if you sign up, and you
+    can unsubscribe at any time.
+  </p>
+
+  <h2 id="changes-to-this-privacy-policy">Changes to This Privacy Policy</h2>
+  <p>
+    We may update this Privacy Policy from time to time. Changes will be posted on this page with a new "Last Updated"
+    date. Continued use of the site after an update means you accept the revised policy.
+  </p>
+
+  <h2 id="contact-information">Contact Information</h2>
+  <p>
+    If you have questions or concerns about this Privacy Policy or our data practices, please contact us through our
+    <a href="/contact/">contact form</a> or by email at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+  </p>
+</Legal>

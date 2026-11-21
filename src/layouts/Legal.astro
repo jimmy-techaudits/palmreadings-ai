@@ -1,0 +1,158 @@
+---
+import Base from './Base.astro';
+
+/**
+ * Shared template for the Privacy Policy and Terms of Use.
+ *
+ * Pass the H1 in the `heading` slot (with an <em class="accent"> word) and the legal text as the default slot.
+ * Every <h2> in the legal text needs a stable `id`: the "On this page" list is built from them.
+ * Wrap a section in <div class="legal-summary"> to show it as the highlighted gold card.
+ */
+interface Props {
+  title: string;
+  description: string;
+  /** Small uppercase label above the H1, e.g. "Privacy Policy". */
+  eyebrow: string;
+  /** Line under the H1. Defaults to the description. */
+  lead?: string;
+  /** Date the document was last updated and took effect, e.g. "November 10, 2026". */
+  updated: string;
+}
+const { title, description, eyebrow, lead = description, updated } = Astro.props;
+
+const body = await Astro.slots.render('default');
+const toc = [...body.matchAll(/<h2\b[^>]*?\bid="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => ({
+  id: m[1],
+  label: m[2].replace(/<[^>]+>/g, '').trim(),
+}));
+const headingCount = (body.match(/<h2\b/g) ?? []).length;
+if (toc.length !== headingCount) {
+  throw new Error(`Legal layout (${Astro.url.pathname}): every <h2> needs an id for the table of contents.`);
+}
+---
+
+<Base title={title} description={description}>
+  <section class="starfield relative border-b border-lavender-300/10 bg-night-950">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="relative mx-auto max-w-[900px] px-4 pb-14 pt-16 text-center sm:px-8 sm:pb-20 sm:pt-24">
+      <p class="eyebrow">{eyebrow}</p>
+      <h1 class="mt-4 font-display text-[clamp(40px,4.8vw,64px)] font-medium leading-[1.08] text-white">
+        <slot name="heading" />
+      </h1>
+      <p class="mx-auto mt-[22px] max-w-[620px] text-[19px] leading-relaxed text-ink-soft">{lead}</p>
+      <p class="mt-7 inline-block rounded-full border border-lavender-300/[0.22] px-4 py-2 text-xs text-[#c8bee8]">
+        Last updated and effective as of <span class="whitespace-nowrap">{updated}</span>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div
+      class="mx-auto grid max-w-[1200px] items-start gap-y-10 px-4 pb-20 pt-12 sm:px-8 sm:pb-28 sm:pt-[72px] lg:grid-cols-[minmax(240px,1fr)_minmax(0,760px)] lg:gap-x-16"
+    >
+      <nav aria-labelledby="legal-toc-title" class="min-w-0 rounded-card border border-lavender-300/[0.14] bg-[rgba(20,16,44,0.5)] px-3 py-6">
+        <p id="legal-toc-title" class="mx-3.5 mb-2.5 font-display text-sm tracking-[0.12em] text-gold-400">On this page</p>
+        <ul class="gap-x-2 sm:columns-2 lg:columns-1">
+          {toc.map((item) => (
+            <li class="break-inside-avoid">
+              <a
+                href={`#${item.id}`}
+                class="flex min-h-11 items-center rounded-xl px-3.5 py-2 text-sm leading-snug text-[#c8bee8] no-underline transition-colors hover:bg-lavender-300/[0.08] hover:text-white"
+                set:html={item.label}
+              />
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div class="legal-prose min-w-0 max-w-[760px]" set:html={body} />
+    </div>
+  </section>
+</Base>
+
+<style is:global>
+  .legal-prose {
+    color: #c8bee8;
+    font-size: 17px;
+    line-height: 1.75;
+  }
+  .legal-prose h2 {
+    margin: 56px 0 0;
+    padding-top: 40px;
+    border-top: 1px solid var(--color-border-soft);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 24px;
+    line-height: 1.25;
+    color: #fff;
+    scroll-margin-top: 24px;
+  }
+  .legal-prose > h2:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .legal-prose p {
+    margin: 16px 0 0;
+  }
+  .legal-prose strong {
+    color: #f3eeff;
+    font-weight: 500;
+  }
+  .legal-prose a {
+    color: var(--color-gold-400);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    border-radius: 4px;
+  }
+  .legal-prose a:hover {
+    color: var(--color-gold-300);
+  }
+  .legal-prose ul {
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .legal-prose li {
+    position: relative;
+    margin-top: 12px;
+    padding-left: 28px;
+  }
+  .legal-prose li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.62em;
+    width: 8px;
+    height: 8px;
+    transform: rotate(45deg);
+    background: var(--color-gold-400);
+    box-shadow: 0 0 8px rgba(246, 199, 127, 0.6);
+  }
+
+  /* Highlighted section ("The Short Version"). */
+  .legal-summary {
+    margin-top: 40px;
+    padding: 24px;
+    border-radius: var(--radius-card-lg);
+    border: 1px solid rgba(246, 199, 127, 0.3);
+    background: linear-gradient(135deg, rgba(40, 22, 84, 0.75), rgba(14, 10, 34, 0.75));
+  }
+  .legal-summary > h2:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+    color: var(--color-gold-300);
+  }
+  .legal-summary + h2 {
+    border-top: 0;
+  }
+
+  @media (min-width: 640px) {
+    .legal-prose h2 {
+      font-size: 26px;
+    }
+    .legal-summary {
+      padding: 36px;
+    }
+  }
+</style>
